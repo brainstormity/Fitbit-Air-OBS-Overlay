@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fitbit Air OBS Overlay — Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* -------------------------------------------------------------------------
+       Design System & Variables
+       ------------------------------------------------------------------------- */
+    :root {
+      --bg-base: #0a0d16;
+      --bg-surface: rgba(17, 24, 39, 0.75);
+      --bg-card: rgba(15, 23, 42, 0.65);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(255, 45, 85, 0.35);
+
+      --accent-heart: #ff2d55;
+      --accent-heart-glow: rgba(255, 45, 85, 0.35);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.3);
+      --accent-cyan: #00f2fe;
+      --accent-cyan-glow: rgba(0, 242, 254, 0.3);
+      --accent-amber: #f59e0b;
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(255, 45, 85, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(0, 242, 254, 0.07) 0%, transparent 45%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 20px 60px 20px;
+      width: 100%;
+    }
+
+    /* -------------------------------------------------------------------------
+       Header
+       ------------------------------------------------------------------------- */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 26px;
+      background: linear-gradient(135deg, rgba(28, 38, 64, 0.88) 0%, rgba(14, 20, 36, 0.94) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-top: 1.5px solid rgba(255, 45, 85, 0.5);
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 45, 85, 0.06);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(255, 45, 85, 0.25), rgba(255, 45, 85, 0.05));
+      border: 1px solid rgba(255, 45, 85, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px var(--accent-heart-glow);
+    }
+
+    .brand-icon-svg {
+      width: 22px;
+      height: 22px;
+      fill: var(--accent-heart);
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.6);
+      transition: all 0.2s ease;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+
+    .status-dot.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    .status-dot.connecting, .status-dot.scanning {
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); opacity: 1; }
+      to { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    .btn-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      background: rgba(0, 242, 254, 0.08);
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-link:hover {
+      background: rgba(0, 242, 254, 0.18);
+      border-color: rgba(0, 242, 254, 0.45);
+      box-shadow: 0 0 10px var(--accent-cyan-glow);
+      transform: translateY(-1px);
+    }
+
+    /* -------------------------------------------------------------------------
+       Steps Layout
+       ------------------------------------------------------------------------- */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .step-card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 22px 26px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(255, 45, 85, 0.3), rgba(255, 45, 85, 0.1));
+      border: 1px solid rgba(255, 45, 85, 0.4);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Step 1 Checklist */
+    .checklist-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+    }
+
+    .check-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .check-text h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .check-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* -------------------------------------------------------------------------
+       Step 2 Controls & Live Telemetry
+       ------------------------------------------------------------------------- */
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-family: var(--font-ui);
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff2d55 0%, #ff5779 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 16px var(--accent-heart-glow);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff4065 0%, #ff6b8b 100%);
+      box-shadow: 0 6px 20px rgba(255, 45, 85, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(45, 55, 72, 0.9);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-stop-icon {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .btn-stop-icon:hover {
+      background: #ef4444;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-stop-icon-bar {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      transition: all 0.2s ease;
+    }
+
+    .btn-stop-icon-bar:hover {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    /* Phone Approval Banner */
+    .approval-card {
+      display: none;
+      align-items: center;
+      gap: 16px;
+      margin-top: 14px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1.5px solid rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .approval-pulse-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      animation: pulse-ring 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse-ring {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); box-shadow: 0 0 14px rgba(245, 158, 11, 0.4); }
+    }
+
+    .approval-body {
+      flex: 1;
+    }
+
+    .approval-heading {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #fbbf24;
+      margin-bottom: 2px;
+    }
+
+    .approval-detail {
+      font-size: 12px;
+      color: #fef3c7;
+      line-height: 1.4;
+    }
+
+    .approval-status-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Live Telemetry Card in Step 2 */
+    .live-telemetry-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(20, 28, 48, 0.85) 0%, rgba(13, 19, 33, 0.9) 100%);
+      border: 1.5px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .live-telemetry-banner.active {
+      display: flex;
+    }
+
+    .telemetry-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .pulse-heart-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 45, 85, 0.1);
+      border: 1.5px solid rgba(255, 45, 85, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pulse-heart-svg {
+      width: 28px;
+      height: 28px;
+      fill: var(--accent-heart);
+      filter: drop-shadow(0 0 8px var(--accent-heart-glow));
+      animation: beat 0.8s infinite ease-in-out;
+      transform-origin: center;
+    }
+
+    @keyframes beat {
+      0% { transform: scale(1); }
+      14% { transform: scale(1.22); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.15); }
+      70% { transform: scale(1); }
+    }
+
+    .bpm-display-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .bpm-digits {
+      font-family: var(--font-mono);
+      font-size: 38px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+      letter-spacing: -2px;
+      text-shadow: 0 0 16px rgba(255, 255, 255, 0.3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bpm-unit {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--accent-heart);
+      letter-spacing: 1px;
+    }
+
+    .zone-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent-green);
+      margin-top: 2px;
+    }
+
+    .telemetry-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .device-info-col {
+      text-align: right;
+    }
+
+    .dev-name-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .dev-status-sub {
+      font-size: 11px;
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+
+    /* Scanning Banner */
+    .scan-loading-bar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(0, 242, 254, 0.08);
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 10px;
+      margin-top: 14px;
+    }
+
+    .scan-loading-bar.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(0, 242, 254, 0.2);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Devices Table */
+    .devices-table-wrap {
+      display: none;
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .devices-table-wrap.active {
+      display: block;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 2fr 2fr 1fr 1fr;
+      padding: 10px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .devices-list {
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .device-row {
+      display: grid;
+      grid-template-columns: 2fr 2fr 1fr 1fr;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 13px;
+    }
+
+    .device-row:last-child {
+      border-bottom: none;
+    }
+
+    .badge-hr {
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      margin-left: 6px;
+    }
+
+    .dev-addr-text {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn-connect-sm {
+      padding: 5px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      border-radius: 6px;
+      background: rgba(255, 45, 85, 0.15);
+      color: #ff5779;
+      border: 1px solid rgba(255, 45, 85, 0.3);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-connect-sm:hover {
+      background: var(--accent-heart);
+      color: #ffffff;
+    }
+
+    /* -------------------------------------------------------------------------
+       Step 3 OBS Setup (2-Column Balanced Layout)
+       ------------------------------------------------------------------------- */
+    .step3-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .step3-left {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .step3-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .url-box {
+      display: flex;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 5px 6px 5px 14px;
+      transition: border-color 0.2s ease;
+    }
+
+    .url-box:focus-within {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px var(--accent-cyan-glow);
+    }
+
+    .url-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+
+    .btn-copy {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(0, 242, 254, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .btn-copy:hover {
+      background: var(--accent-cyan);
+      color: #0a0d16;
+    }
+
+    /* Style Presets Chips */
+    .presets-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .presets-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .presets-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .preset-chip {
+      padding: 5px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-chip:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--text-main);
+    }
+
+    .preset-chip.active {
+      background: rgba(255, 45, 85, 0.15);
+      border-color: var(--accent-heart);
+      color: #ffffff;
+      box-shadow: 0 0 10px var(--accent-heart-glow);
+    }
+
+    /* Live Preview Panel */
+    .preview-panel {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-title-text {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .backdrop-switch {
+      display: flex;
+      gap: 4px;
+    }
+
+    .b-btn {
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .b-btn.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .preview-stage {
+      width: 100%;
+      height: 140px;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-stage.backdrop-grid {
+      background-color: #111827;
+      background-image: 
+        linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+        linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+        linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    }
+
+    .preview-stage.backdrop-dark {
+      background: #090d16;
+    }
+
+    .preview-stage.backdrop-game {
+      background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #0f172a 100%);
+    }
+
+    iframe#previewFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+    }
+
+    /* -------------------------------------------------------------------------
+       Toasts
+       ------------------------------------------------------------------------- */
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--border-subtle);
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+      animation: toastIn 0.25s ease forwards;
+    }
+
+    .toast.success { border-color: rgba(16, 185, 129, 0.4); }
+    .toast.error { border-color: rgba(239, 68, 68, 0.4); }
+
+    @keyframes toastIn {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 820px) {
+      .step3-grid { grid-template-columns: 1fr; }
+      .header { flex-direction: column; align-items: flex-start; gap: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ---------------------------------------------------------------------
+         Header
+         --------------------------------------------------------------------- -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon-box">
+          <svg class="brand-icon-svg" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Fitbit Air OBS</h1>
+          <div class="brand-subtitle">Direct Bluetooth Heart Rate Telemetry</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill">
+          <span class="status-dot" id="headerDot"></span>
+          <span id="headerStatusText">Disconnected</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ---------------------------------------------------------------------
+         Step Workflow
+         --------------------------------------------------------------------- -->
+    <main class="steps-container">
+
+      <!-- STEP 1: PREPARATION -->
+      <section class="step-card">
+        <div class="step-header">
+          <div class="step-num">1</div>
+          <div>
+            <h2 class="step-title">Prepare Your Fitbit</h2>
+            <div class="step-desc">Enable Bluetooth heart rate broadcasting so your computer can detect it.</div>
+          </div>
+        </div>
+
+        <div class="checklist-row">
+          <div class="check-item">
+            <div class="check-badge">✓</div>
+            <div class="check-text">
+              <h4>Turn On "Share Heart Rate"</h4>
+              <p>In the Fitbit / Google Health app on your phone, open <strong>Device Settings</strong> and enable <strong>"Share Heart Rate"</strong>.</p>
+            </div>
+          </div>
+
+          <div class="check-item">
+            <div class="check-badge">✓</div>
+            <div class="check-text">
+              <h4>Wear Snugly or Start Workout</h4>
+              <p>Put your watch on your wrist. If idle, starting any workout (e.g. "Workout" or "Run") forces active BLE advertising.</p>
+            </div>
+          </div>
+
+          <div class="check-item">
+            <div class="check-badge">✓</div>
+            <div class="check-text">
+              <h4>Computer Bluetooth ON</h4>
+              <p>Make sure Bluetooth is enabled on this computer.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: CONNECT WEARABLE -->
+      <section class="step-card">
+        <div class="step-header">
+          <div class="step-num">2</div>
+          <div>
+            <h2 class="step-title">Connect Wearable</h2>
+            <div class="step-desc">Click Auto-Connect to pair automatically, or scan to pick your device.</div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button id="btnAutoConnect" class="btn btn-primary">
+            <span>⚡ Auto-Connect to Fitbit</span>
+          </button>
+
+          <button id="btnScanDevices" class="btn btn-secondary">
+            <span>🔍 Scan Devices</span>
+          </button>
+
+          <button id="btnStopScan" class="btn btn-stop-icon" style="display: none;" title="Stop scanning" aria-label="Stop scanning">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <rect x="5" y="5" width="14" height="14" rx="3"/>
+            </svg>
+          </button>
+
+          <button id="btnDisconnect" class="btn btn-danger" style="display: none;">
+            <span>⏏ Disconnect</span>
+          </button>
+        </div>
+
+        <!-- Scanning Spinner -->
+        <div class="scan-loading-bar" id="scanLoadingBar">
+          <div class="spinner"></div>
+          <span id="scanStatusMsg" style="font-size: 13px; color: var(--accent-cyan); font-weight: 600; flex: 1;">Scanning nearby Bluetooth frequencies (5s)...</span>
+          <button id="btnStopScanBar" class="btn-stop-icon-bar" title="Stop scanning" aria-label="Stop scanning">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <rect x="4" y="4" width="16" height="16" rx="2.5"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Discovered Devices Table -->
+        <div class="devices-table-wrap" id="devicesTableWrap">
+          <div class="table-header">
+            <span>Device</span>
+            <span>Bluetooth Address</span>
+            <span>Signal</span>
+            <span style="text-align: right;">Action</span>
+          </div>
+          <div class="devices-list" id="devicesList"></div>
+        </div>
+
+        <!-- Phone Pairing Approval Prompt -->
+        <div class="approval-card" id="phoneApprovalCard" style="display: none;">
+          <div class="approval-pulse-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="3"/>
+              <line x1="12" y1="18" x2="12" y2="18"/>
+            </svg>
+          </div>
+          <div class="approval-body">
+            <div class="approval-heading">📲 Check your phone: Tap "Pair" or "Approve"</div>
+            <div class="approval-detail">Fitbit sent a one-time Bluetooth pairing prompt to your phone. Tap <strong>"Pair"</strong> or <strong>"Approve"</strong> to start streaming heart rate data.</div>
+          </div>
+          <div class="approval-status-tag">
+            <span class="status-dot connecting"></span>
+            <span>Waiting for phone tap...</span>
+          </div>
+        </div>
+
+        <!-- Live Connected Telemetry Banner -->
+        <div class="live-telemetry-banner" id="liveTelemetryBanner">
+          <div class="telemetry-left">
+            <div class="pulse-heart-box">
+              <svg class="pulse-heart-svg" id="liveHeartSvg" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="bpm-display-row">
+                <span class="bpm-digits" id="liveBpmDigits">--</span>
+                <span class="bpm-unit">BPM</span>
+              </div>
+              <div class="zone-pill" id="liveZonePill">Normal</div>
+            </div>
+          </div>
+
+          <div class="telemetry-right">
+            <div class="device-info-col">
+              <div class="dev-name-title" id="liveDeviceName">Fitbit Air</div>
+              <div class="dev-status-sub">Live 1 Hz Telemetry Streaming</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: ADD TO OBS STUDIO -->
+      <section class="step-card">
+        <div class="step3-grid">
+          <div class="step3-left">
+            <div class="step-header" style="margin-bottom: 12px;">
+              <div class="step-num">3</div>
+              <div>
+                <h2 class="step-title">Add to OBS Studio</h2>
+                <div class="step-desc">Paste this URL into a new Browser Source in OBS Studio.</div>
+              </div>
+            </div>
+
+            <div class="url-box">
+              <input type="text" id="obsUrlInput" class="url-input" readonly value="http://127.0.0.1:8000/overlay">
+              <button class="btn-copy" id="btnCopyUrl">
+                <span id="copyBtnText">📋 Copy</span>
+              </button>
+            </div>
+
+            <div class="presets-wrap">
+              <div class="presets-label">Style Preset:</div>
+              <div class="presets-list" id="presetList">
+                <button class="preset-chip active" data-preset="pill">Default Pill</button>
+                <button class="preset-chip" data-preset="minimal">Minimalist (No Box)</button>
+                <button class="preset-chip" data-preset="nowave">No ECG Wave</button>
+                <button class="preset-chip" data-preset="compact">Compact</button>
+                <button class="preset-chip" data-preset="transparent">Transparent Glass</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Live OBS Preview Vertically Centered -->
+          <div class="step3-right">
+            <div class="preview-panel">
+              <div class="preview-head">
+                <div class="preview-title-text">
+                  <span class="status-dot connected"></span>
+                  <span>Live OBS Preview</span>
+                </div>
+                <div class="backdrop-switch">
+                  <button class="b-btn active" data-bg="grid">Grid</button>
+                  <button class="b-btn" data-bg="dark">Dark</button>
+                  <button class="b-btn" data-bg="game">Game</button>
+                </div>
+              </div>
+
+              <div class="preview-stage backdrop-grid" id="previewStage">
+                <iframe id="previewFrame" src="/overlay"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div class="toast-box" id="toastBox"></div>
+
+  <!-- -----------------------------------------------------------------------
+       Dashboard Logic
+       ----------------------------------------------------------------------- -->
+  <script>
+    (function() {
+      'use strict';
+
+      const headerDot = document.getElementById('headerDot');
+      const headerStatusText = document.getElementById('headerStatusText');
+
+      const btnAutoConnect = document.getElementById('btnAutoConnect');
+      const btnScanDevices = document.getElementById('btnScanDevices');
+      const btnDisconnect = document.getElementById('btnDisconnect');
+      const btnStopScan = document.getElementById('btnStopScan');
+      const btnStopScanBar = document.getElementById('btnStopScanBar');
+      const phoneApprovalCard = document.getElementById('phoneApprovalCard');
+
+      const scanLoadingBar = document.getElementById('scanLoadingBar');
+      const devicesTableWrap = document.getElementById('devicesTableWrap');
+      const devicesList = document.getElementById('devicesList');
+
+      const liveTelemetryBanner = document.getElementById('liveTelemetryBanner');
+      const liveHeartSvg = document.getElementById('liveHeartSvg');
+      const liveBpmDigits = document.getElementById('liveBpmDigits');
+      const liveZonePill = document.getElementById('liveZonePill');
+      const liveDeviceName = document.getElementById('liveDeviceName');
+
+      const obsUrlInput = document.getElementById('obsUrlInput');
+      const btnCopyUrl = document.getElementById('btnCopyUrl');
+      const copyBtnText = document.getElementById('copyBtnText');
+
+      const previewFrame = document.getElementById('previewFrame');
+      const previewStage = document.getElementById('previewStage');
+      const toastBox = document.getElementById('toastBox');
+
+      let currentStatus = 'disconnected';
+      let currentBpm = null;
+      let activePreset = 'pill';
+      let serverPort = 8000;
+      let ws = null;
+
+      // Toast
+      function showToast(msg, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = msg;
+        toastBox.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => toast.remove(), 250);
+        }, 3000);
+      }
+
+      // Presets URL handling
+      function getPresetQuery(preset) {
+        switch (preset) {
+          case 'minimal': return '?layout=minimal';
+          case 'nowave': return '?wave=0';
+          case 'compact': return '?layout=compact';
+          case 'transparent': return '?bg=transparent';
+          default: return '';
+        }
+      }
+
+      function updateObsUrl() {
+        const query = getPresetQuery(activePreset);
+        obsUrlInput.value = `http://127.0.0.1:${serverPort}/overlay${query}`;
+        previewFrame.src = `/overlay${query}`;
+      }
+
+      // Dynamic Zone Coloring
+      function updateZone(bpm) {
+        if (!bpm || bpm <= 0) return;
+        let zone = 'Normal';
+        let color = '#10b981';
+
+        if (bpm < 60) {
+          zone = 'Resting';
+          color = '#38bdf8';
+        } else if (bpm < 114) {
+          zone = 'Normal';
+          color = '#10b981';
+        } else if (bpm < 133) {
+          zone = 'Fat Burn';
+          color = '#fbbf24';
+        } else if (bpm < 162) {
+          zone = 'Cardio';
+          color = '#fb923c';
+        } else {
+          zone = 'Peak Intensity';
+          color = '#ef4444';
+        }
+
+        liveZonePill.textContent = zone;
+        liveZonePill.style.color = color;
+        liveZonePill.style.borderColor = color;
+        liveZonePill.style.background = `${color}20`;
+      }
+
+      function updateTelemetry(data) {
+        if (!data || !data.bpm) return;
+        currentBpm = data.bpm;
+        liveBpmDigits.textContent = currentBpm;
+
+        // Telemetry is streaming, meaning user has approved pairing on their phone
+        if (phoneApprovalCard) phoneApprovalCard.style.display = 'none';
+
+        const duration = (60.0 / Math.max(35, currentBpm)).toFixed(3);
+        liveHeartSvg.style.animationDuration = `${duration}s`;
+
+        updateZone(currentBpm);
+      }
+
+      // State UI
+      function setStatus(statusInfo) {
+        if (!statusInfo) return;
+        currentStatus = statusInfo.status || 'disconnected';
+        const device = statusInfo.connected_device;
+
+        headerDot.className = 'status-dot';
+
+        if (currentStatus === 'connected') {
+          headerDot.classList.add('connected');
+          const devTitle = device ? device.name : 'Fitbit Air';
+          headerStatusText.textContent = `Connected: ${devTitle}`;
+
+          liveTelemetryBanner.classList.add('active');
+          liveDeviceName.textContent = devTitle;
+
+          btnDisconnect.style.display = 'inline-flex';
+          btnAutoConnect.disabled = true;
+          btnScanDevices.disabled = true;
+          if (btnStopScan) btnStopScan.style.display = 'none';
+          if (btnStopScanBar) btnStopScanBar.style.display = 'none';
+
+          // Seamless hand-off: stop scanning/connecting bar right when phone prompt is shown
+          scanLoadingBar.classList.remove('active');
+
+          // If connected but no BPM reading received yet, prompt user to approve on phone
+          if (phoneApprovalCard) {
+            phoneApprovalCard.style.display = (currentBpm === null) ? 'flex' : 'none';
+          }
+        } else if (currentStatus === 'connecting') {
+          headerDot.classList.add('connecting');
+          const devName = statusInfo.connecting_device || 'Fitbit Air';
+          headerStatusText.textContent = `Connecting to ${devName}...`;
+
+          btnAutoConnect.disabled = true;
+          btnScanDevices.disabled = true;
+          btnDisconnect.style.display = 'none';
+          if (btnStopScan) btnStopScan.style.display = 'none';
+          if (btnStopScanBar) btnStopScanBar.style.display = 'none';
+
+          // Keep scanning/connecting message active until phone approval prompt displays
+          scanLoadingBar.classList.add('active');
+          const statusSpan = document.getElementById('scanStatusMsg');
+          if (statusSpan) {
+            statusSpan.textContent = `Connecting to ${devName}... Establishing secure Bluetooth link...`;
+          }
+          if (phoneApprovalCard) phoneApprovalCard.style.display = 'none';
+        } else if (currentStatus === 'scanning') {
+          headerDot.classList.add('scanning');
+          headerStatusText.textContent = 'Scanning...';
+
+          btnAutoConnect.disabled = true;
+          btnScanDevices.disabled = true;
+          btnDisconnect.style.display = 'none';
+          if (btnStopScan) btnStopScan.style.display = 'inline-flex';
+          if (btnStopScanBar) btnStopScanBar.style.display = 'inline-flex';
+          scanLoadingBar.classList.add('active');
+          const statusSpan = document.getElementById('scanStatusMsg');
+          if (statusSpan) {
+            statusSpan.textContent = 'Scanning nearby Bluetooth signals for your Fitbit (5s)...';
+          }
+          if (phoneApprovalCard) phoneApprovalCard.style.display = 'none';
+        } else {
+          headerDot.classList.add('disconnected');
+          headerStatusText.textContent = 'Disconnected';
+
+          liveTelemetryBanner.classList.remove('active');
+          liveBpmDigits.textContent = '--';
+          liveHeartSvg.style.animationDuration = '0s';
+          liveZonePill.textContent = 'Normal';
+          liveZonePill.style.color = '';
+          liveZonePill.style.borderColor = '';
+          liveZonePill.style.background = '';
+          btnDisconnect.style.display = 'none';
+          btnAutoConnect.disabled = false;
+          btnScanDevices.disabled = false;
+          if (btnStopScan) btnStopScan.style.display = 'none';
+          if (btnStopScanBar) btnStopScanBar.style.display = 'none';
+          scanLoadingBar.classList.remove('active');
+          if (phoneApprovalCard) phoneApprovalCard.style.display = 'none';
+          currentBpm = null;
+        }
+      }
+
+      // Devices list rendering
+      function renderDevices(devices) {
+        devicesTableWrap.classList.add('active');
+        if (!devices || devices.length === 0) {
+          devicesList.innerHTML = '<div style="padding: 18px; text-align: center; color: var(--text-muted); font-size: 13px;">No devices found nearby. Ensure "Share Heart Rate" is enabled.</div>';
+          return;
+        }
+
+        devicesList.innerHTML = '';
+        devices.forEach(dev => {
+          const row = document.createElement('div');
+          row.className = 'device-row';
+
+          const isCandidate = dev.is_fitbit || dev.is_heart_rate;
+          const badge = isCandidate ? '<span class="badge-hr">Fitbit / HR</span>' : '';
+          const cleanName = escapeHtml(dev.name);
+          const cleanAddr = escapeHtml(dev.address);
+
+          row.innerHTML = `
+            <div><strong>${cleanName}</strong>${badge}</div>
+            <div class="dev-addr-text" title="${cleanAddr}">${cleanAddr}</div>
+            <div style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);">${dev.rssi || -90} dBm</div>
+            <div style="text-align: right;">
+              <button class="btn-connect-sm" data-addr="${cleanAddr}">Connect</button>
+            </div>
+          `;
+
+          row.querySelector('.btn-connect-sm').addEventListener('click', () => {
+            connectDevice(dev.address);
+          });
+
+          devicesList.appendChild(row);
+        });
+      }
+
+      function escapeHtml(t) {
+        const d = document.createElement('div');
+        d.textContent = t || '';
+        return d.innerHTML;
+      }
+
+      // Actions
+      async function autoConnect() {
+        btnAutoConnect.disabled = true;
+        btnAutoConnect.innerHTML = '<span>⏳ Finding Fitbit...</span>';
+        scanLoadingBar.classList.add('active');
+        const statusSpan = document.getElementById('scanStatusMsg');
+        if (statusSpan) statusSpan.textContent = 'Scanning nearby Bluetooth signals for your Fitbit...';
+        showToast('Scanning for nearby Fitbit...', 'info');
+
+        try {
+          const res = await fetch('/api/ble/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: null }),
+          });
+          const data = await res.json();
+          if (data.status === 'ok') {
+            showToast(`Connected to ${data.device ? data.device.name : 'Wearable'}!`, 'success');
+          } else {
+            showToast(data.message || 'No Fitbit found. Check "Share Heart Rate" setting.', 'error');
+            setStatus({ status: 'disconnected' });
+          }
+        } catch (e) {
+          showToast(`Error: ${e.message}`, 'error');
+          setStatus({ status: 'disconnected' });
+        } finally {
+          btnAutoConnect.innerHTML = '<span>⚡ Auto-Connect to Fitbit</span>';
+          btnAutoConnect.disabled = (currentStatus === 'connected' || currentStatus === 'connecting');
+          if (currentStatus !== 'connecting' && currentStatus !== 'scanning') {
+            scanLoadingBar.classList.remove('active');
+          }
+        }
+      }
+
+      async function connectDevice(address) {
+        setStatus({ status: 'connecting', connecting_device: address });
+        showToast(`Connecting to ${address}...`, 'info');
+
+        try {
+          const res = await fetch('/api/ble/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: address }),
+          });
+          const data = await res.json();
+          if (data.status === 'ok') {
+            showToast(`Connected!`, 'success');
+          } else {
+            showToast(data.message || 'Connection failed.', 'error');
+            setStatus({ status: 'disconnected' });
+          }
+        } catch (e) {
+          showToast(`Error: ${e.message}`, 'error');
+          setStatus({ status: 'disconnected' });
+        }
+      }
+
+      async function scanDevices() {
+        btnScanDevices.disabled = true;
+        const statusSpan = document.getElementById('scanStatusMsg');
+        if (statusSpan) statusSpan.textContent = 'Scanning nearby Bluetooth frequencies (5s)...';
+        scanLoadingBar.classList.add('active');
+        if (btnStopScan) btnStopScan.style.display = 'inline-flex';
+        if (btnStopScanBar) btnStopScanBar.style.display = 'inline-flex';
+        showToast('Scanning nearby Bluetooth devices...', 'info');
+
+        try {
+          const res = await fetch('/api/ble/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timeout: 5.0 }),
+          });
+          const data = await res.json();
+          if (data.status === 'ok') {
+            renderDevices(data.devices);
+            showToast(`Discovered ${data.devices.length} devices.`, 'success');
+          } else {
+            showToast(data.message || 'Scan failed.', 'error');
+          }
+        } catch (e) {
+          showToast(`Scan error: ${e.message}`, 'error');
+        } finally {
+          btnScanDevices.disabled = (currentStatus === 'connected' || currentStatus === 'connecting');
+          if (btnStopScan) btnStopScan.style.display = 'none';
+          if (btnStopScanBar) btnStopScanBar.style.display = 'none';
+          if (currentStatus !== 'connecting' && currentStatus !== 'scanning') {
+            scanLoadingBar.classList.remove('active');
+          }
+        }
+      }
+
+      async function disconnectWearable() {
+        try {
+          await fetch('/api/ble/disconnect', { method: 'POST' });
+          showToast('Disconnected.', 'info');
+          setStatus({ status: 'disconnected' });
+        } catch (e) {
+          showToast(`Error: ${e.message}`, 'error');
+        }
+      }
+
+      async function stopScan() {
+        try {
+          await fetch('/api/ble/stop-scan', { method: 'POST' });
+          showToast('Scan stopped.', 'info');
+          setStatus({ status: 'disconnected' });
+        } catch (e) {
+          console.error('Stop scan error:', e);
+        }
+      }
+
+      // Initial status
+      async function loadInitial() {
+        try {
+          const res = await fetch('/api/status');
+          const data = await res.json();
+          serverPort = data.port || 8000;
+          updateObsUrl();
+
+          if (data.ble) setStatus(data.ble);
+          if (data.latest_measurement) updateTelemetry(data.latest_measurement);
+        } catch (e) {
+          console.error('Initial status error:', e);
+        }
+      }
+
+      // WebSocket
+      function setupWs() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${protocol}//${window.location.host}/ws/live`);
+
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'init') {
+              if (msg.latest) updateTelemetry(msg.latest);
+              if (msg.ble_status) setStatus(msg.ble_status);
+            } else if (msg.type === 'measurement') {
+              updateTelemetry(msg.data);
+            } else if (msg.type === 'ble_status') {
+              setStatus(msg.data);
+            }
+          } catch (err) {}
+        };
+
+        ws.onclose = () => setTimeout(setupWs, 3000);
+      }
+
+      // Copy Button
+      btnCopyUrl.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(obsUrlInput.value);
+          const orig = copyBtnText.textContent;
+          copyBtnText.textContent = '✓ Copied!';
+          btnCopyUrl.style.borderColor = 'var(--accent-green)';
+          btnCopyUrl.style.color = 'var(--accent-green)';
+          setTimeout(() => {
+            copyBtnText.textContent = orig;
+            btnCopyUrl.style.borderColor = '';
+            btnCopyUrl.style.color = '';
+          }, 2000);
+          showToast('Copied URL! Paste into OBS Browser Source.', 'success');
+        } catch (e) {
+          showToast('Could not copy automatically.', 'error');
+        }
+      });
+
+      // Style presets
+      document.querySelectorAll('#presetList .preset-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('#presetList .preset-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activePreset = chip.dataset.preset;
+          updateObsUrl();
+        });
+      });
+
+      // Preview backdrop toggle
+      document.querySelectorAll('.backdrop-switch .b-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.backdrop-switch .b-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          previewStage.className = `preview-stage backdrop-${btn.dataset.bg}`;
+        });
+      });
+
+      // Event listeners
+      btnAutoConnect.addEventListener('click', autoConnect);
+      btnScanDevices.addEventListener('click', scanDevices);
+      btnDisconnect.addEventListener('click', disconnectWearable);
+      if (btnStopScan) btnStopScan.addEventListener('click', stopScan);
+      if (btnStopScanBar) btnStopScanBar.addEventListener('click', stopScan);
+
+      // Run
+      loadInitial();
+      setupWs();
+
+    })();
+  </script>
+</body>
+</html>

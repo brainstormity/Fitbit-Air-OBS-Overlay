@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fitbit Air OBS Heart Rate Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* OBS Transparent Canvas Standard */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent !important;
+      overflow: hidden;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 4px 12px;
+    }
+
+    :root {
+      --heart-color: #ff2d55;
+      --heart-glow: rgba(255, 45, 85, 0.55);
+      --zone-color: #10b981;
+      --zone-glow: rgba(16, 185, 129, 0.4);
+      --bg-surface: rgba(10, 15, 26, 0.82);
+      --border-color: rgba(255, 255, 255, 0.12);
+      --text-color: #ffffff;
+      --cyan-ecg: #00f2fe;
+    }
+
+    /* =========================================================================
+       Base Widget Container
+       ========================================================================= */
+    .obs-overlay-widget {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 18px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid var(--border-color);
+      border-radius: 9999px;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5), 0 0 16px var(--heart-glow);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Transparent background mode */
+    body.bg-transparent .obs-overlay-widget {
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px;
+    }
+
+    /* Minimalist layout */
+    body.layout-minimal .obs-overlay-widget {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      padding: 0;
+      gap: 12px;
+    }
+
+    /* Card layout */
+    body.layout-card .obs-overlay-widget {
+      border-radius: 20px;
+      padding: 16px 24px;
+      flex-direction: column;
+      align-items: stretch;
+      min-width: 280px;
+    }
+
+    /* Compact layout */
+    body.layout-compact .obs-overlay-widget {
+      padding: 8px 14px;
+      gap: 10px;
+      border-radius: 14px;
+    }
+
+    /* Sizes */
+    body.size-sm .obs-overlay-widget { transform: scale(0.85); transform-origin: top left; }
+    body.size-lg .obs-overlay-widget { transform: scale(1.2); transform-origin: top left; }
+    body.size-xl .obs-overlay-widget { transform: scale(1.4); transform-origin: top left; }
+
+    /* =========================================================================
+       Heart Icon & Pulse Animation
+       ========================================================================= */
+    .heart-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .heart-svg {
+      width: 36px;
+      height: 36px;
+      fill: var(--heart-color);
+      filter: drop-shadow(0 0 10px var(--heart-glow));
+      animation: heartbeat 0.8s infinite ease-in-out;
+      transform-origin: center;
+    }
+
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      14% { transform: scale(1.24); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.16); }
+      70% { transform: scale(1); }
+    }
+
+    /* =========================================================================
+       BPM Numbers & Typography
+       ========================================================================= */
+    .bpm-data-group {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .bpm-number-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .bpm-digits {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      color: #ffffff;
+      text-shadow: 0 0 18px rgba(255, 255, 255, 0.4), 0 0 30px var(--heart-glow);
+      font-variant-numeric: tabular-nums;
+      min-width: 58px;
+    }
+
+    .bpm-label {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--heart-color);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--heart-glow);
+    }
+
+    /* =========================================================================
+       Heart Rate Zone Pill
+       ========================================================================= */
+    .zone-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5px 8px;
+      border-radius: 9999px;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--zone-color);
+      border: 1px solid var(--zone-color);
+      background: rgba(0, 0, 0, 0.35);
+      box-shadow: 0 0 12px var(--zone-glow);
+      margin-top: 3px;
+      align-self: flex-start;
+      transition: all 0.3s ease;
+    }
+
+    /* =========================================================================
+       Mini ECG Wave Canvas
+       ========================================================================= */
+    .ecg-wave-container {
+      position: relative;
+      width: 110px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    canvas#obsEcgCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Peak Intensity Alert Flash */
+    .zone-peak-pulse {
+      animation: alert-pulse 1s infinite alternate;
+    }
+
+    @keyframes alert-pulse {
+      0% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+      100% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 35px rgba(239, 68, 68, 0.9); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- The OBS Overlay Widget -->
+  <div id="obsWidget" class="obs-overlay-widget">
+    
+    <!-- Pulsing Heart Icon -->
+    <div class="heart-wrapper">
+      <svg class="heart-svg" id="heartIcon" viewBox="0 0 24 24">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+    </div>
+
+    <!-- BPM Digits & Label -->
+    <div class="bpm-data-group">
+      <div class="bpm-number-row">
+        <span id="bpmValue" class="bpm-digits">--</span>
+        <span class="bpm-label">BPM</span>
+      </div>
+      <div id="zoneBadge" class="zone-badge">Normal</div>
+    </div>
+
+    <!-- Mini Real-Time ECG Wave -->
+    <div id="ecgWaveBox" class="ecg-wave-container">
+      <canvas id="obsEcgCanvas" width="220" height="76"></canvas>
+    </div>
+
+  </div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      // -----------------------------------------------------------------------
+      // URL Query Parameters Configuration
+      // -----------------------------------------------------------------------
+      const params = new URLSearchParams(window.location.search);
+      const layout = params.get('layout') || 'pill'; // pill, minimal, card, compact
+      const bg = params.get('bg') || 'glass';       // glass, transparent, solid
+      const showWave = params.get('wave') !== '0';  // 1 or 0
+      const showZone = params.get('zone') !== '0';  // 1 or 0
+      const size = params.get('size') || 'normal';  // normal, sm, lg, xl
+
+      if (layout) document.body.classList.add(`layout-${layout}`);
+      if (bg === 'transparent') document.body.classList.add('bg-transparent');
+      if (size !== 'normal') document.body.classList.add(`size-${size}`);
+
+      const ecgWaveBox = document.getElementById('ecgWaveBox');
+      if (!showWave && ecgWaveBox) ecgWaveBox.style.display = 'none';
+
+      const zoneBadgeEl = document.getElementById('zoneBadge');
+      if (!showZone && zoneBadgeEl) zoneBadgeEl.style.display = 'none';
+
+      // Elements
+      const bpmValueEl = document.getElementById('bpmValue');
+      const heartIconEl = document.getElementById('heartIcon');
+      const obsWidgetEl = document.getElementById('obsWidget');
+      const canvas = document.getElementById('obsEcgCanvas');
+      const ctx = canvas ? canvas.getContext('2d') : null;
+
+      let currentBpm = 74;
+      let ecgPhase = 0;
+      let ecgX = 0;
+      let ecgPoints = [];
+
+      // -----------------------------------------------------------------------
+      // Dynamic Zone Coloring
+      // -----------------------------------------------------------------------
+      function updateZoneStyle(bpm) {
+        let zoneName = 'Normal';
+        let zoneColor = '#10b981'; // Green
+        let zoneGlow = 'rgba(16, 185, 129, 0.4)';
+        let isPeak = false;
+
+        if (bpm < 60) {
+          zoneName = 'Resting';
+          zoneColor = '#38bdf8'; // Cyan
+          zoneGlow = 'rgba(56, 189, 248, 0.4)';
+        } else if (bpm < 114) {
+          zoneName = 'Normal';
+          zoneColor = '#10b981'; // Emerald
+          zoneGlow = 'rgba(16, 185, 129, 0.4)';
+        } else if (bpm < 133) {
+          zoneName = 'Fat Burn';
+          zoneColor = '#fbbf24'; // Amber
+          zoneGlow = 'rgba(251, 191, 36, 0.4)';
+        } else if (bpm < 162) {
+          zoneName = 'Cardio';
+          zoneColor = '#fb923c'; // Orange
+          zoneGlow = 'rgba(249, 115, 22, 0.5)';
+        } else {
+          zoneName = 'Peak Intensity';
+          zoneColor = '#ef4444'; // Red alert
+          zoneGlow = 'rgba(239, 68, 68, 0.8)';
+          isPeak = true;
+        }
+
+        document.documentElement.style.setProperty('--zone-color', zoneColor);
+        document.documentElement.style.setProperty('--zone-glow', zoneGlow);
+
+        if (isPeak) {
+          document.documentElement.style.setProperty('--heart-color', '#ff1744');
+          obsWidgetEl.classList.add('zone-peak-pulse');
+        } else {
+          document.documentElement.style.setProperty('--heart-color', '#ff2d55');
+          obsWidgetEl.classList.remove('zone-peak-pulse');
+        }
+
+        if (zoneBadgeEl) {
+          zoneBadgeEl.textContent = zoneName;
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // Update BPM & Pulse Speed
+      // -----------------------------------------------------------------------
+      function clearBpm() {
+        currentBpm = 0;
+        bpmValueEl.textContent = '--';
+        heartIconEl.style.animation = 'none';
+        if (zoneBadgeEl) {
+          zoneBadgeEl.textContent = 'OFFLINE';
+        }
+        document.documentElement.style.setProperty('--zone-color', '#64748b');
+        document.documentElement.style.setProperty('--zone-glow', 'rgba(100, 116, 139, 0.2)');
+        document.documentElement.style.setProperty('--heart-color', '#ff2d55');
+        obsWidgetEl.classList.remove('zone-peak-pulse');
+
+        if (ctx) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ecgPoints = [];
+        }
+      }
+
+      function setBpm(bpm) {
+        if (!bpm || bpm <= 0) {
+          clearBpm();
+          return;
+        }
+        currentBpm = bpm;
+        bpmValueEl.textContent = bpm;
+
+        // Scale heartbeat pulse duration (60 / bpm seconds)
+        const beatSec = (60.0 / Math.max(30, bpm)).toFixed(3);
+        heartIconEl.style.animation = `heartBeat ${beatSec}s ease-in-out infinite`;
+
+        updateZoneStyle(bpm);
+      }
+
+      // -----------------------------------------------------------------------
+      // Mini Canvas ECG Wave
+      // -----------------------------------------------------------------------
+      function getEcgVoltage(phase) {
+        if (phase < 0.12) {
+          return -Math.sin((phase / 0.12) * Math.PI) * 0.18;
+        } else if (phase < 0.18) {
+          return 0;
+        } else if (phase < 0.21) {
+          return Math.sin(((phase - 0.18) / 0.03) * Math.PI) * 0.14;
+        } else if (phase < 0.26) {
+          return -Math.sin(((phase - 0.21) / 0.05) * Math.PI) * 0.96;
+        } else if (phase < 0.30) {
+          return Math.sin(((phase - 0.26) / 0.04) * Math.PI) * 0.36;
+        } else if (phase < 0.42) {
+          return 0;
+        } else if (phase < 0.65) {
+          return -Math.sin(((phase - 0.42) / 0.23) * Math.PI) * 0.28;
+        } else {
+          return 0;
+        }
+      }
+
+      function renderMiniEcg() {
+        if (!ctx || !showWave) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const midY = h * 0.52;
+
+        if (currentBpm <= 0) {
+          // Flatline when disconnected
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+          ctx.fillRect(0, 0, w, h);
+          ctx.save();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = 'rgba(0, 242, 254, 0.2)';
+          ctx.beginPath();
+          ctx.moveTo(0, midY);
+          ctx.lineTo(w, midY);
+          ctx.stroke();
+          ctx.restore();
+          requestAnimationFrame(renderMiniEcg);
+          return;
+        }
+
+        const beatsPerSec = Math.max(40, currentBpm) / 60.0;
+        const phaseStep = (beatsPerSec / 60.0) * 1.05;
+        ecgPhase = (ecgPhase + phaseStep) % 1.0;
+
+        const voltage = getEcgVoltage(ecgPhase);
+        const y = midY + voltage * (h * 0.42);
+
+        ecgPoints.push({ x: ecgX, y: y });
+        if (ecgPoints.length > w) ecgPoints.shift();
+
+        ecgX = (ecgX + 3.0) % w;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(0, 0, w, h);
+
+        if (ecgPoints.length > 2) {
+          ctx.save();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#00f2fe';
+          ctx.shadowColor = '#00f2fe';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+
+          for (let i = 0; i < ecgPoints.length; i++) {
+            const pt = ecgPoints[i];
+            if (i === 0) {
+              ctx.moveTo(pt.x, pt.y);
+            } else {
+              if (Math.abs(pt.x - ecgPoints[i - 1].x) < 25) {
+                ctx.lineTo(pt.x, pt.y);
+              } else {
+                ctx.moveTo(pt.x, pt.y);
+              }
+            }
+          }
+          ctx.stroke();
+          ctx.restore();
+
+          // Dot
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#00f2fe';
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.arc(ecgX, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        requestAnimationFrame(renderMiniEcg);
+      }
+
+      if (showWave && ctx) {
+        requestAnimationFrame(renderMiniEcg);
+      }
+
+      // Initialize offline state
+      clearBpm();
+
+      // -----------------------------------------------------------------------
+      // Real-Time WebSocket Listener
+      // -----------------------------------------------------------------------
+      let ws = null;
+      function connectLiveFeed() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/live`;
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onmessage = function(event) {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'measurement' && msg.data && msg.data.bpm) {
+              setBpm(msg.data.bpm);
+            } else if (msg.type === 'init') {
+              if (msg.ble_status && msg.ble_status.status === 'connected' && msg.latest && msg.latest.bpm) {
+                setBpm(msg.latest.bpm);
+              } else {
+                clearBpm();
+              }
+            } else if (msg.type === 'ble_status') {
+              if (msg.data && msg.data.status !== 'connected') {
+                clearBpm();
+              }
+            }
+          } catch(e) {}
+        };
+
+        ws.onclose = function() {
+          setTimeout(connectLiveFeed, 2000);
+        };
+
+        ws.onerror = function() {
+          ws.close();
+        };
+      }
+
+      connectLiveFeed();
+
+    })();
+  </script>
+</body>
+</html>
