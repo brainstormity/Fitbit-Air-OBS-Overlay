@@ -13,15 +13,15 @@ No Google Cloud API keys, no OAuth consent screens, no cloud lag. Pure local Blu
 
 ---
 
-## ✨ Features
+## Features
 
-- **⚡ Real-Time 1 Hz Telemetry**: Updates every 1 second straight from your wrist sensor.
-- **🎨 Streamer-Ready Transparent Overlay**: Glassmorphism pill, animated beating heart synchronized to your actual BPM, real-time mini ECG waveform, and auto-colored training zones.
-- **🎛️ Zero Config / Highly Customizable**: Switch between minimalist, pill, card, or custom sizes via simple URL parameters.
+- **Real-Time 1 Hz Telemetry**: Updates every 1 second straight from your wrist sensor.
+- **Streamer-Ready Transparent Overlay**: Glassmorphism pill, animated beating heart synchronized to your actual BPM, real-time mini ECG waveform, and auto-colored training zones.
+- **Zero Config / Highly Customizable**: Switch between minimalist, pill, card, or custom sizes via simple URL parameters.
 
 ---
 
-## 🚀 Quick Start (One Command)
+## Quick Start (One Command)
 
 ### 1. Enable Heart Rate Sharing on Phone
 In the **Google Health / Fitbit app** on your phone:
@@ -55,7 +55,7 @@ Click **"⚡ Auto-Connect to Fitbit"** to pair automatically, or click **"🔍 S
 
 ---
 
-## 🎨 Visual Customizations (URL Parameters)
+## Visual Customizations (URL Parameters)
 
 You can select style presets directly in the Web Control Center or customize the URL in OBS:
 
@@ -72,7 +72,7 @@ Combine parameters freely! (e.g., `http://127.0.0.1:8000/overlay?layout=minimal&
 
 ---
 
-## 💻 Optional CLI Commands (Headless / Advanced)
+## Optional CLI Commands (Headless / Advanced)
 
 If you prefer headless terminal automation instead of the Web UI, `ble_listener.py` is still available:
 
@@ -89,7 +89,7 @@ python3 ble_listener.py --address "YOUR-DEVICE-UUID-OR-MAC"
 
 ---
 
-## ❓ Troubleshooting
+## Troubleshooting
 
 - **Device not found during scan?**
   Make sure "Share Heart Rate" is enabled in your Fitbit app. If needed, start any exercise session (e.g., "Workout") on the Fitbit, which forces active Bluetooth advertising.
@@ -100,6 +100,6 @@ python3 ble_listener.py --address "YOUR-DEVICE-UUID-OR-MAC"
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
