@@ -24,9 +24,40 @@
       user-select: none;
       -webkit-user-select: none;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: flex-start;
-      padding: 4px 12px;
+      padding: 16px;
+    }
+
+    /* Positioning Modes */
+    body.pos-top-left {
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+
+    body.pos-top-center {
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    body.pos-top-right {
+      align-items: flex-start;
+      justify-content: flex-end;
+    }
+
+    body.pos-center {
+      align-items: center;
+      justify-content: center;
+    }
+
+    body.pos-bottom-left {
+      align-items: flex-end;
+      justify-content: flex-start;
+    }
+
+    body.pos-bottom-right {
+      align-items: flex-end;
+      justify-content: flex-end;
     }
 
     :root {
@@ -97,6 +128,18 @@
     body.size-sm .obs-overlay-widget { transform: scale(0.85); transform-origin: top left; }
     body.size-lg .obs-overlay-widget { transform: scale(1.2); transform-origin: top left; }
     body.size-xl .obs-overlay-widget { transform: scale(1.4); transform-origin: top left; }
+
+    body.pos-top-center.size-sm .obs-overlay-widget,
+    body.pos-top-center.size-lg .obs-overlay-widget,
+    body.pos-top-center.size-xl .obs-overlay-widget { transform-origin: top center; }
+
+    body.pos-top-right.size-sm .obs-overlay-widget,
+    body.pos-top-right.size-lg .obs-overlay-widget,
+    body.pos-top-right.size-xl .obs-overlay-widget { transform-origin: top right; }
+
+    body.pos-center.size-sm .obs-overlay-widget,
+    body.pos-center.size-lg .obs-overlay-widget,
+    body.pos-center.size-xl .obs-overlay-widget { transform-origin: center; }
 
     /* =========================================================================
        Heart Icon & Pulse Animation
@@ -259,10 +302,12 @@
       const showWave = params.get('wave') !== '0';  // 1 or 0
       const showZone = params.get('zone') !== '0';  // 1 or 0
       const size = params.get('size') || 'normal';  // normal, sm, lg, xl
+      const pos = params.get('pos') || 'top-left';   // top-left, top-center, top-right, center, bottom-left, bottom-right
 
       if (layout) document.body.classList.add(`layout-${layout}`);
       if (bg === 'transparent') document.body.classList.add('bg-transparent');
       if (size !== 'normal') document.body.classList.add(`size-${size}`);
+      if (pos) document.body.classList.add(`pos-${pos}`);
 
       const ecgWaveBox = document.getElementById('ecgWaveBox');
       if (!showWave && ecgWaveBox) ecgWaveBox.style.display = 'none';
