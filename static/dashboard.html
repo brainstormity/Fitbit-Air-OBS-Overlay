@@ -1212,7 +1212,8 @@
 
       function updateObsUrl() {
         const query = getPresetQuery(activePreset);
-        obsUrlInput.value = `http://127.0.0.1:${serverPort}/overlay${query}`;
+        const host = window.location.hostname || '127.0.0.1';
+        obsUrlInput.value = `http://${host}:${serverPort}/overlay${query}`;
         previewFrame.src = `/overlay${query}`;
       }
 

@@ -90,10 +90,13 @@ ble_manager = BleManager(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     port = current_config.port
+    local_ip = get_local_ip()
     print("\n" + "=" * 55)
     print(" ❤️  Fitbit Air OBS Heart Rate Overlay Server Ready!")
     print(f" • Control Dashboard: http://localhost:{port}/")
     print(f" • OBS Overlay URL:   http://localhost:{port}/overlay")
+    if local_ip not in ("127.0.0.1", "localhost"):
+        print(f" • 2nd PC / Network:  http://{local_ip}:{port}/overlay")
     print("=" * 55 + "\n")
     yield
     print("[Server] Shutting down BLE client...")
