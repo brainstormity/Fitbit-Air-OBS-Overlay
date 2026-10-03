@@ -7,16 +7,17 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Optional
-from dotenv import load_dotenv
 from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env")
+
+HOST = "127.0.0.1"
+PORT = 8000
 
 
 class AppConfig(BaseModel):
-    host: str = os.getenv("HOST", "0.0.0.0")
-    port: int = int(os.getenv("PORT", "8000"))
+    host: str = os.getenv("HOST", HOST)
+    port: int = int(os.getenv("PORT", str(PORT)))
     fitbit_ble_address: Optional[str] = os.getenv("FITBIT_BLE_ADDRESS", None)
 
 
