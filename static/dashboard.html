@@ -1270,7 +1270,10 @@
 
         const host = window.location.hostname || '127.0.0.1';
         obsUrlInput.value = `http://${host}:${serverPort}/overlay${obsQuery}`;
-        previewFrame.src = `/overlay${previewQuery}`;
+        const previewSrc = `/overlay${previewQuery}`;
+        if (previewFrame.getAttribute('src') !== previewSrc) {
+          previewFrame.src = previewSrc;
+        }
       }
 
       // Dynamic Zone Coloring
@@ -1462,7 +1465,7 @@
           const data = await res.json();
           if (data.status === 'ok') {
             showToast(`Connected to ${data.device ? data.device.name : 'Wearable'}!`, 'success');
-          } else {
+          } else if (data.status !== 'cancelled') {
             showToast(data.message || 'No Fitbit found. Check "Share Heart Rate" setting.', 'error');
             setStatus({ status: 'disconnected' });
           }
@@ -1520,7 +1523,7 @@
           if (data.status === 'ok') {
             renderDevices(data.devices);
             showToast(`Discovered ${data.devices.length} devices.`, 'success');
-          } else {
+          } else if (data.status !== 'cancelled') {
             showToast(data.message || 'Scan failed.', 'error');
           }
         } catch (e) {
@@ -1593,9 +1596,23 @@
       }
 
       // Copy Button
+      // navigator.clipboard only exists on secure origins (https / localhost),
+      // so fall back to execCommand when the dashboard is opened via a LAN IP.
+      async function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+        obsUrlInput.select();
+        obsUrlInput.setSelectionRange(0, text.length);
+        const ok = document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        if (!ok) throw new Error('copy failed');
+      }
+
       btnCopyUrl.addEventListener('click', async () => {
         try {
-          await navigator.clipboard.writeText(obsUrlInput.value);
+          await copyText(obsUrlInput.value);
           const orig = copyBtnText.textContent;
           copyBtnText.textContent = '✓ Copied!';
           btnCopyUrl.style.borderColor = 'var(--accent-green)';

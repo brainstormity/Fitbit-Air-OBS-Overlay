@@ -12,13 +12,12 @@ import socket
 from typing import Any, Dict, List, Optional, Set
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from config import BASE_DIR, current_config
-from ble_manager import BleManager
+from ble_manager import BleManager, ScanCancelled
 
 STATIC_DIR = BASE_DIR / "static"
 OVERLAY_HTML = STATIC_DIR / "overlay.html"
@@ -28,11 +27,10 @@ DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 def get_local_ip() -> str:
     """Detect LAN IP address for multi-PC streaming setups."""
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            # UDP connect sends no packets; it just picks the outbound interface.
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
     except Exception:
         return "127.0.0.1"
 
@@ -105,14 +103,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Fitbit Air OBS Overlay", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 @app.websocket("/ws/live")
 async def websocket_live_endpoint(websocket: WebSocket):
@@ -138,7 +128,7 @@ async def websocket_live_endpoint(websocket: WebSocket):
 # -----------------------------------------------------------------------------
 
 class BleMeasurementRequest(BaseModel):
-    bpm: int
+    bpm: int = Field(ge=0, le=300)
     sensor_contact: Optional[str] = "Detected"
     energy_expended_kj: Optional[int] = None
     rr_intervals_ms: Optional[List[float]] = None
@@ -171,6 +161,8 @@ async def ble_scan_endpoint(req: BleScanRequest = BleScanRequest()):
     try:
         devices = await ble_manager.scan(timeout=req.timeout or 5.0)
         return {"status": "ok", "devices": devices}
+    except ScanCancelled:
+        return {"status": "cancelled"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -192,31 +184,19 @@ async def ble_connect_endpoint(req: BleConnectRequest = BleConnectRequest()):
     try:
         device = await ble_manager.connect(address=req.address)
         return {"status": "ok", "device": device}
+    except ScanCancelled:
+        return {"status": "cancelled"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 
 @app.post("/api/ble/disconnect")
 async def ble_disconnect_endpoint():
-    """Disconnect active BLE connection or stop simulation."""
+    """Disconnect active BLE connection."""
     global latest_measurement
     latest_measurement = None
     await ble_manager.disconnect()
     return {"status": "ok"}
-
-
-class BleSimulateRequest(BaseModel):
-    enabled: bool = True
-
-
-@app.post("/api/ble/simulate")
-async def ble_simulate_endpoint(req: BleSimulateRequest = BleSimulateRequest()):
-    """Toggle simulated demo heart rate stream."""
-    if req.enabled:
-        await ble_manager.start_simulation()
-    else:
-        await ble_manager.stop_simulation()
-    return {"status": "ok", "state": ble_manager.state}
 
 
 @app.get("/api/ble/status")
@@ -273,4 +253,5 @@ async def get_overlay():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host=current_config.host, port=current_config.port, reload=True)
+    # No auto-reload: a reload restarts the process and drops the live BLE connection.
+    uvicorn.run(app, host=current_config.host, port=current_config.port)

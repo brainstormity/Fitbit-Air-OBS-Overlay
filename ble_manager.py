@@ -25,6 +25,10 @@ HEART_RATE_MEASUREMENT_UUID = "00002a37-0000-1000-8000-00805f9b34fb"
 FITBIT_KEYWORDS = ["fitbit", "air", "charge", "pixel watch", "sense", "versa", "inspire", "heart"]
 
 
+class ScanCancelled(RuntimeError):
+    """Raised when the user stops an in-progress scan."""
+
+
 def parse_heart_rate_measurement(data: bytearray) -> Dict[str, Any]:
     """
     Parse standard Bluetooth SIG Heart Rate Measurement GATT characteristic (0x2A37).
@@ -130,9 +134,16 @@ class BleManager:
     async def _discover_raw(self, timeout: float = 4.0) -> List[Dict[str, Any]]:
         """Low-level scanner discovering all devices and sorting candidates."""
         print(f"[BleManager] Discovering nearby BLE devices ({timeout}s)...")
-        self._scan_task = asyncio.current_task()
+        # Run discovery in its own task so stop_scan() cancels only the scan,
+        # not the HTTP request handler that awaits it.
+        scan_task = asyncio.ensure_future(BleakScanner.discover(timeout=timeout, return_adv=True))
+        self._scan_task = scan_task
         try:
-            devices = await BleakScanner.discover(timeout=timeout, return_adv=True)
+            await asyncio.wait({scan_task})
+            if scan_task.cancelled():
+                print("[BleManager] Scan cancelled by user.")
+                raise ScanCancelled("Scan cancelled.")
+            devices = scan_task.result()
             results: List[Dict[str, Any]] = []
 
             for d, adv in devices.values():
@@ -162,11 +173,11 @@ class BleManager:
             self.discovered_devices = results
             print(f"[BleManager] Discovered {len(results)} devices.")
             return results
-        except asyncio.CancelledError:
-            print("[BleManager] Scan cancelled by user.")
-            raise
         finally:
-            self._scan_task = None
+            if not scan_task.done():
+                scan_task.cancel()
+            if self._scan_task is scan_task:
+                self._scan_task = None
 
     async def stop_scan(self):
         """Cancel active scan if currently running."""
@@ -196,6 +207,8 @@ class BleManager:
         try:
             results = await self._discover_raw(timeout=timeout)
             return results
+        except ScanCancelled:
+            raise
         except Exception as e:
             self.last_error = f"Scan failed: {str(e)}"
             print(f"[BleManager] Scan error: {e}")
@@ -216,6 +229,9 @@ class BleManager:
 
     def _on_client_disconnected(self, client: BleakClient):
         """Called by Bleak when connection drops."""
+        # Ignore late callbacks from a previous client after we've moved on to a new one.
+        if self.client is not None and client is not self.client:
+            return
         print(f"[BleManager] Device disconnected: {self.connected_device}")
         self.state = "disconnected"
         dev = self.connected_device.get("name") if self.connected_device else "Device"
@@ -230,6 +246,9 @@ class BleManager:
         """Connect to device by address, or auto-connect to the best discovered candidate."""
         if not BLEAK_AVAILABLE:
             raise RuntimeError("Bleak library is not installed.")
+
+        if self._is_busy:
+            raise RuntimeError("A scan or connection is already in progress.")
 
         # If already connected to target, return early
         if self.client and self.client.is_connected and self.connected_device:
@@ -247,6 +266,7 @@ class BleManager:
         self._is_busy = True
         target_address = address or current_config.fitbit_ble_address
         target_name = "Fitbit Wearable"
+        pending_client: Optional[BleakClient] = None
 
         try:
             # Auto-discovery if no target address passed
@@ -287,6 +307,7 @@ class BleManager:
                 disconnected_callback=self._on_client_disconnected,
                 timeout=12.0,
             )
+            pending_client = client
             await client.connect()
 
             if not client.is_connected:
@@ -308,7 +329,19 @@ class BleManager:
             self._notify_status()
             return self.connected_device
 
+        except ScanCancelled:
+            self.connecting_device_name = None
+            self.state = "connected" if (self.client and self.client.is_connected) else "disconnected"
+            self._notify_status()
+            raise
         except Exception as e:
+            # Don't leave a half-open link behind if connect succeeded but subscribing failed.
+            if pending_client is not None:
+                try:
+                    if pending_client.is_connected:
+                        await pending_client.disconnect()
+                except Exception:
+                    pass
             self.connecting_device_name = None
             self.state = "disconnected"
             self.connected_device = None

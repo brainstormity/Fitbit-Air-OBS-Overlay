@@ -20,13 +20,16 @@
       height: 100%;
       background: transparent !important;
       overflow: hidden;
+    }
+
+    body {
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       user-select: none;
       -webkit-user-select: none;
       display: flex;
       align-items: flex-start;
       justify-content: flex-start;
-      padding: 16px;
+      padding: 12px;
     }
 
     /* Positioning Modes */
@@ -329,6 +332,7 @@
       let ecgPhase = 0;
       let ecgX = 0;
       let ecgPoints = [];
+      let lastFrameTime = 0;
 
       // -----------------------------------------------------------------------
       // Dynamic Zone Coloring
@@ -437,7 +441,7 @@
         // 0 at <=50 BPM -> 1 at >=180 BPM
         const intensity = Math.min(1, Math.max(0, (bpm - 50) / 130));
         const lubFreq = 95 + 55 * intensity;
-        const peak = 0.5 + 0.5 * intensity;
+        const peak = 0.35 + 0.3 * intensity;
         const gap = Math.min(0.18, 0.28 * 60 / bpm); // lub -> dub spacing tightens at high BPM
 
         thump(time, lubFreq, peak, 0.14);               // "lub"
@@ -533,8 +537,13 @@
         }
       }
 
-      function renderMiniEcg() {
+      function renderMiniEcg(now) {
         if (!ctx || !showWave) return;
+
+        // Time-based animation so speed is identical at 30fps (OBS default) and 120Hz+.
+        // Values are tuned to the original 60fps behaviour; dt is clamped after tab/source hides.
+        const frames = lastFrameTime ? Math.min(4, (now - lastFrameTime) / (1000 / 60)) : 1;
+        lastFrameTime = now;
 
         const w = canvas.width;
         const h = canvas.height;
@@ -557,16 +566,22 @@
         }
 
         const beatsPerSec = Math.max(40, currentBpm) / 60.0;
-        const phaseStep = (beatsPerSec / 60.0) * 1.05;
+        const phaseStep = (beatsPerSec / 60.0) * 1.05 * frames;
         ecgPhase = (ecgPhase + phaseStep) % 1.0;
 
         const voltage = getEcgVoltage(ecgPhase);
         const y = midY + voltage * (h * 0.42);
 
         ecgPoints.push({ x: ecgX, y: y });
-        if (ecgPoints.length > w) ecgPoints.shift();
 
-        ecgX = (ecgX + 3.0) % w;
+        ecgX = (ecgX + 3.0 * frames) % w;
+
+        // Erase a window ahead of the cursor so only one sweep is ever visible.
+        ecgPoints = ecgPoints.filter(p => {
+          const ahead = (p.x - ecgX + w) % w;
+          return ahead === 0 || ahead > 30;
+        });
+        if (ecgPoints.length > w) ecgPoints.shift();
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
         ctx.fillRect(0, 0, w, h);
