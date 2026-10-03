@@ -835,6 +835,39 @@
       border-color: rgba(255, 255, 255, 0.3);
     }
 
+    .sound-opts {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .sound-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sound-toggle input,
+    .sound-vol input {
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+
+    .sound-vol {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     .preview-stage {
       width: 100%;
       height: 140px;
@@ -1113,6 +1146,18 @@
                 <button class="preset-chip" data-preset="compact">Compact</button>
                 <button class="preset-chip" data-preset="transparent">Transparent Glass</button>
               </div>
+
+              <div class="sound-opts">
+                <label class="sound-toggle" for="soundToggle">
+                  <input type="checkbox" id="soundToggle" checked>
+                  <span>🔊 Heartbeat Sound</span>
+                </label>
+                <label class="sound-vol" for="soundVolume">
+                  <span>Volume</span>
+                  <input type="range" id="soundVolume" min="0" max="100" value="70">
+                </label>
+              </div>
+
             </div>
           </div>
 
@@ -1176,6 +1221,8 @@
       const obsUrlInput = document.getElementById('obsUrlInput');
       const btnCopyUrl = document.getElementById('btnCopyUrl');
       const copyBtnText = document.getElementById('copyBtnText');
+      const soundToggle = document.getElementById('soundToggle');
+      const soundVolume = document.getElementById('soundVolume');
 
       const previewFrame = document.getElementById('previewFrame');
       const previewStage = document.getElementById('previewStage');
@@ -1211,10 +1258,19 @@
       }
 
       function updateObsUrl() {
-        const query = getPresetQuery(activePreset);
+        const params = new URLSearchParams(getPresetQuery(activePreset));
+        const previewQuery = params.toString() ? `?${params.toString()}` : '';
+
+        // Sound only goes into the OBS URL; the dashboard preview stays silent.
+        if (soundToggle && soundToggle.checked) {
+          params.set('sound', '1');
+          params.set('vol', soundVolume.value);
+        }
+        const obsQuery = params.toString() ? `?${params.toString()}` : '';
+
         const host = window.location.hostname || '127.0.0.1';
-        obsUrlInput.value = `http://${host}:${serverPort}/overlay${query}`;
-        previewFrame.src = `/overlay${query}`;
+        obsUrlInput.value = `http://${host}:${serverPort}/overlay${obsQuery}`;
+        previewFrame.src = `/overlay${previewQuery}`;
       }
 
       // Dynamic Zone Coloring
@@ -1226,9 +1282,12 @@
         if (bpm < 60) {
           zone = 'Resting';
           color = '#38bdf8';
-        } else if (bpm < 114) {
+        } else if (bpm < 80) {
           zone = 'Normal';
           color = '#10b981';
+        } else if (bpm < 114) {
+          zone = 'Sweating';
+          color = '#a3e635';
         } else if (bpm < 133) {
           zone = 'Fat Burn';
           color = '#fbbf24';
@@ -1552,6 +1611,10 @@
         }
       });
 
+      // Heartbeat sound options (URL updates on change; preview stays silent)
+      soundToggle.addEventListener('change', updateObsUrl);
+      soundVolume.addEventListener('change', updateObsUrl);
+
       // Style presets
       document.querySelectorAll('#presetList .preset-chip').forEach(chip => {
         chip.addEventListener('click', () => {
@@ -1579,6 +1642,7 @@
       if (btnStopScanBar) btnStopScanBar.addEventListener('click', stopScan);
 
       // Run
+      updateObsUrl();
       loadInitial();
       setupWs();
 

@@ -303,6 +303,9 @@
       const showZone = params.get('zone') !== '0';  // 1 or 0
       const size = params.get('size') || 'normal';  // normal, sm, lg, xl
       const pos = params.get('pos') || 'top-left';   // top-left, top-center, top-right, center, bottom-left, bottom-right
+      const soundEnabled = params.get('sound') === '1'; // heartbeat sound (opt-in)
+      const volumeParam = parseFloat(params.get('vol')); // 0-100, default 70
+      const volume = Math.min(1, Math.max(0, (isNaN(volumeParam) ? 70 : volumeParam) / 100));
 
       if (layout) document.body.classList.add(`layout-${layout}`);
       if (bg === 'transparent') document.body.classList.add('bg-transparent');
@@ -340,10 +343,14 @@
           zoneName = 'Resting';
           zoneColor = '#38bdf8'; // Cyan
           zoneGlow = 'rgba(56, 189, 248, 0.4)';
-        } else if (bpm < 114) {
+        } else if (bpm < 80) {
           zoneName = 'Normal';
           zoneColor = '#10b981'; // Emerald
           zoneGlow = 'rgba(16, 185, 129, 0.4)';
+        } else if (bpm < 114) {
+          zoneName = 'Sweating';
+          zoneColor = '#a3e635'; // Lime
+          zoneGlow = 'rgba(163, 230, 53, 0.45)';
         } else if (bpm < 133) {
           zoneName = 'Fat Burn';
           zoneColor = '#fbbf24'; // Amber
@@ -376,10 +383,100 @@
       }
 
       // -----------------------------------------------------------------------
+      // Heartbeat Sound (synthesized lub-dub via Web Audio, enabled with ?sound=1)
+      // Tempo follows BPM; pitch and loudness rise as BPM increases.
+      // -----------------------------------------------------------------------
+      let audioCtx = null;
+      let masterGain = null;
+      let beatTimer = null;
+      let nextBeatTime = 0;
+
+      function initAudio() {
+        if (!soundEnabled || audioCtx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = volume;
+        masterGain.connect(audioCtx.destination);
+
+        // Regular browsers block audio until a user gesture; OBS does not.
+        const unlock = () => {
+          if (audioCtx && audioCtx.state !== 'running') audioCtx.resume();
+        };
+        ['pointerdown', 'keydown', 'touchstart'].forEach(evt =>
+          window.addEventListener(evt, unlock, { passive: true })
+        );
+        unlock();
+      }
+
+      function thump(time, freq, peak, dur) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const lp = audioCtx.createBiquadFilter();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, time);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.45, time + dur);
+
+        lp.type = 'lowpass';
+        lp.frequency.value = 650;
+
+        gain.gain.setValueAtTime(0.0001, time);
+        gain.gain.exponentialRampToValueAtTime(peak, time + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+
+        osc.connect(lp);
+        lp.connect(gain);
+        gain.connect(masterGain);
+        osc.start(time);
+        osc.stop(time + dur + 0.02);
+      }
+
+      function playBeat(time, bpm) {
+        // 0 at <=50 BPM -> 1 at >=180 BPM
+        const intensity = Math.min(1, Math.max(0, (bpm - 50) / 130));
+        const lubFreq = 95 + 55 * intensity;
+        const peak = 0.5 + 0.5 * intensity;
+        const gap = Math.min(0.18, 0.28 * 60 / bpm); // lub -> dub spacing tightens at high BPM
+
+        thump(time, lubFreq, peak, 0.14);               // "lub"
+        thump(time + gap, lubFreq * 1.18, peak * 0.7, 0.11); // "dub"
+      }
+
+      function scheduleBeats() {
+        if (!audioCtx || audioCtx.state !== 'running' || currentBpm <= 0) return;
+        const now = audioCtx.currentTime;
+        if (nextBeatTime < now) nextBeatTime = now + 0.05;
+        while (nextBeatTime < now + 0.15) {
+          playBeat(nextBeatTime, currentBpm);
+          nextBeatTime += 60.0 / Math.max(30, currentBpm);
+        }
+      }
+
+      function startHeartbeatSound() {
+        if (!soundEnabled) return;
+        initAudio();
+        if (!audioCtx || beatTimer) return;
+        nextBeatTime = 0;
+        beatTimer = setInterval(scheduleBeats, 40);
+      }
+
+      function stopHeartbeatSound() {
+        if (beatTimer) {
+          clearInterval(beatTimer);
+          beatTimer = null;
+        }
+      }
+
+      if (soundEnabled) initAudio();
+
+      // -----------------------------------------------------------------------
       // Update BPM & Pulse Speed
       // -----------------------------------------------------------------------
       function clearBpm() {
         currentBpm = 0;
+        stopHeartbeatSound();
         bpmValueEl.textContent = '--';
         heartIconEl.style.animation = 'none';
         if (zoneBadgeEl) {
@@ -407,9 +504,10 @@
 
         // Scale heartbeat pulse duration (60 / bpm seconds)
         const beatSec = (60.0 / Math.max(30, bpm)).toFixed(3);
-        heartIconEl.style.animation = `heartBeat ${beatSec}s ease-in-out infinite`;
+        heartIconEl.style.animation = `heartbeat ${beatSec}s ease-in-out infinite`;
 
         updateZoneStyle(bpm);
+        startHeartbeatSound();
       }
 
       // -----------------------------------------------------------------------

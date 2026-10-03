@@ -67,6 +67,9 @@ You can select style presets directly in the Web Control Center or customize the
 | **No Zone Pill** | `http://127.0.0.1:8000/overlay?zone=0` | Hides the heart rate zone badge. |
 | **Transparent** | `http://127.0.0.1:8000/overlay?bg=transparent` | 100% transparent borderless container. |
 | **Large Size** | `http://127.0.0.1:8000/overlay?size=lg` | Larger widget (set OBS Width to `480`, Height to `150`). |
+| **Heartbeat Sound** | `http://127.0.0.1:8000/overlay?sound=1&vol=70` | Plays a "lub-dub" heartbeat (volume `0`–`100`). Tempo, pitch and loudness rise with your BPM. In OBS, tick **Control audio via OBS** on the Browser Source to route/mix it. |
+
+**Zones:** Resting (<60) · Normal (60–79) · Sweating (80–113) · Fat Burn (114–132) · Cardio (133–161) · Peak Intensity (162+)
 
 Combine parameters freely! (e.g., `http://127.0.0.1:8000/overlay?layout=minimal&size=lg`)
 
