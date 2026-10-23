@@ -1,0 +1,77 @@
+:root { --accent: #35e0a1; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: "Segoe UI", system-ui, sans-serif; }
+
+.stage { position: relative; width: var(--w, 800px); height: var(--h, 520px); }
+.canvas { position: absolute; left: 0; top: 0; width: var(--cw, 800px); height: var(--ch, 520px); transform-origin: 0 0; transform: scale(var(--scale, 1)); }
+.skin { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* ---- shared parts ---- */
+.skin .well { fill: rgba(0, 0, 0, .28); }
+.skin text.glyph { font: 800 26px "Segoe UI", system-ui, sans-serif; text-anchor: middle; fill: var(--c); pointer-events: none; }
+.skin .face circle { fill: #2a2c31; stroke: none; transition: fill .04s; }
+.skin .face.on circle { fill: var(--c); filter: drop-shadow(0 0 10px var(--c)); }
+.skin .face.on text.glyph { fill: #141518; }
+.skin .face.sym .symbol { fill: none; stroke: var(--c); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.skin .face.sym.on .symbol { stroke: #141518; }
+.skin .dir { fill: var(--dpad, #2d2f34); }
+.skin .dir.on { fill: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); }
+.skin .dir-core { fill: var(--dpad, #2d2f34); }
+.skin .bumper { fill: var(--bumper, #2a2c31); stroke: rgba(255, 255, 255, .12); stroke-width: 1.5; }
+.skin .bumper.on { fill: var(--accent); filter: drop-shadow(0 0 10px var(--accent)); }
+.skin .trig-bg { fill: var(--bumper, #232529); stroke: rgba(255, 255, 255, .1); stroke-width: 1.5; }
+.skin .trig-fill { fill: var(--accent); opacity: .92; transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(0); }
+.skin .cap { fill: url(#xbCap); stroke: rgba(255, 255, 255, .14); stroke-width: 2; }
+.skin .cap.on { stroke: var(--accent); stroke-width: 4; }
+.skin .cap-dish { fill: none; stroke: rgba(255, 255, 255, .1); stroke-width: 2; }
+.skin .cap-dot { fill: rgba(255, 255, 255, .12); }
+.skin .stick-ring { fill: #0f1012; stroke: rgba(255, 255, 255, .08); stroke-width: 2; }
+.skin .small circle, .skin .small rect:first-child { fill: #34363b; stroke: rgba(255, 255, 255, .14); stroke-width: 1.5; }
+.skin .small .mark { fill: #cfd3da; } .skin .small .mark-line { fill: none; stroke: #cfd3da; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.skin .small.on circle, .skin .small.on rect:first-child { fill: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); }
+.skin .home circle { fill: #2d2f34; stroke: rgba(255, 255, 255, .18); stroke-width: 2; }
+.skin .home .home-mark { fill: none; stroke: #e9ebef; stroke-width: 3; stroke-linecap: round; }
+.skin .home .home-ring { fill: none; stroke: #e9ebef; stroke-width: 2.5; }
+.skin .home.on circle { fill: var(--accent); filter: drop-shadow(0 0 12px var(--accent)); }
+.skin .home.on .home-mark, .skin .home.on .home-ring { stroke: #101114; }
+
+/* ---- Xbox Series (Carbon Black by default, Robot White with ?variant=white) ---- */
+.stage.xbox { --shell: #1a1b1e; --shell-hi: #2c2e33; --shell-lo: #121214; --cap: #0d0d0f; --cap-hi: #34373d; --bumper: #212327; --bumper-hi: #3a3d43; --dpad: #2f3237; }
+.stage.xbox.white { --shell: #e4e6ea; --shell-hi: #f6f7f9; --shell-lo: #cfd2d8; --cap: #101114; --cap-hi: #3a3d43; --bumper: #dcdfe4; --bumper-hi: #f4f5f7; --dpad: #1c1d20; }
+.xbox .shell { stroke: none; }
+.xbox .shell-line { fill: none; stroke: rgba(0, 0, 0, .55); stroke-width: 2; }
+.stage.xbox.white .shell-line { stroke: rgba(0, 0, 0, .3); }
+.xbox .dpad .well { fill: #0e0f11; }
+.stage.xbox.white .trig-bg { fill: #dcdfe4; stroke: rgba(0, 0, 0, .25); }
+.stage.xbox .bumper { fill: url(#xbBump); }
+.stage.xbox.white .bumper { stroke: rgba(0, 0, 0, .3); }
+.stage.xbox .home circle:first-child { fill: url(#xbGuide); }
+.stage.xbox .home .home-ring { fill: none; }
+
+/* ---- DualSense (white shell, black plate) ---- */
+.stage.dualsense { --shell: #d9dde3; --shell-hi: #f4f6f9; --bumper: #e6e9ee; --dpad: #f4f6f9; }
+.dualsense .shell { stroke: none; }
+.dualsense .shell-line { fill: none; stroke: rgba(0, 0, 0, .28); stroke-width: 2; }
+.dualsense .plate { fill: #16171b; stroke: rgba(0, 0, 0, .5); stroke-width: 2; }
+.dualsense .lightbar { fill: none; stroke: #3b82f6; stroke-width: 4; stroke-linecap: round; opacity: .9; filter: drop-shadow(0 0 5px #3b82f6); }
+.dualsense .bumper { fill: url(#dsBump); stroke: rgba(0, 0, 0, .28); }
+.dualsense .trig-bg { fill: #e6e9ee; stroke: rgba(0, 0, 0, .22); }
+.dualsense .touch rect { stroke: rgba(255, 255, 255, .12); stroke-width: 1.5; }
+.dualsense .touch.on rect { fill: var(--accent); filter: drop-shadow(0 0 10px var(--accent)); }
+.dualsense .cap { fill: url(#dsCap); }
+.dualsense .stick-ring { fill: #f1f3f6; stroke: rgba(0, 0, 0, .25); }
+.dualsense .well { fill: rgba(0, 0, 0, .12); }
+.dualsense .plate ~ .stick-unit .well, .dualsense .stick-unit .well { fill: #0b0c0e; }
+.dualsense .dpad .well, .dualsense .face-cluster .well { display: none; }
+.dualsense .dir, .dualsense .dir-core { stroke: rgba(0, 0, 0, .3); stroke-width: 1.5; }
+.dualsense .face circle { fill: #f6f7fa; stroke: rgba(0, 0, 0, .22); stroke-width: 1.5; }
+.dualsense .face.on circle { fill: var(--c); }
+.dualsense .small.pill rect { fill: #23252a; stroke: rgba(255, 255, 255, .25); }
+.dualsense .small.pill.on rect { fill: var(--accent); }
+.dualsense .home circle { fill: #0f1013; stroke: rgba(255, 255, 255, .22); }
+.dualsense .ps-mark { fill: none; stroke: #f4f6f9; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.dualsense .home.on .ps-mark { stroke: #101114; }
+.dualsense .mute rect { fill: #272a30; stroke: rgba(255, 255, 255, .12); }
+
+#hint { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 8px 16px; border-radius: 999px; background: rgba(15, 16, 20, .78); color: #e9ebef; font: 600 14px "Segoe UI", system-ui, sans-serif; text-align: center; max-width: 92vw; }
+#hint[hidden] { display: none; }

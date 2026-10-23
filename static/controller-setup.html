@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Controller Overlay Setup</title>
+  <style>
+    :root { --bg:#0e1015; --card:#171a21; --line:#2a2f3a; --text:#e8ebf1; --muted:#9aa3b2; --accent:#35e0a1; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+    h1 { font-size: 26px; margin: 0 0 4px; } p.lead { color: var(--muted); margin: 0 0 22px; }
+    .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+    @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 13px; color: var(--muted); }
+    select, input[type=number], input[type=text] { width: 100%; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line); background: #0f1218; color: var(--text); font: inherit; }
+    input[type=range] { width: 100%; }
+    input[type=color] { width: 54px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: none; padding: 2px; }
+    .row { display: flex; align-items: center; gap: 10px; } .row > * { flex: 0 0 auto; } .row .grow { flex: 1; }
+    .check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 600; } .check input { width: 18px; height: 18px; }
+    button { cursor: pointer; border: 0; border-radius: 9px; padding: 9px 14px; font: 600 14px "Segoe UI", system-ui, sans-serif; background: var(--accent); color: #07110d; }
+    button.ghost { background: #232834; color: var(--text); }
+    .preview { background: repeating-conic-gradient(#1b1f27 0 25%, #14171d 0 50%) 0 0 / 24px 24px; border-radius: 10px; overflow: hidden; height: 440px; }
+    .preview iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .url { margin-top: 14px; } .url input { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+    ol { color: var(--muted); padding-left: 20px; margin: 14px 0 0; } ol b { color: var(--text); }
+    small.note { display: block; color: var(--muted); margin-top: 6px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Controller Overlay</h1>
+  <p class="lead">Show your Xbox or PS5 controller on stream, with click sounds. Pick your options, then copy the URL into an OBS Browser Source. <a href="/">Back to the heart-rate dashboard</a></p>
+
+  <div class="grid">
+    <section class="card">
+      <label for="controller">Controller look</label>
+      <select id="controller">
+        <option value="auto">Automatic (match the connected controller)</option>
+        <option value="xbox">Xbox Series</option>
+        <option value="dualsense">PS5 DualSense</option>
+      </select>
+
+      <label for="device">Which controller (if several are connected)</label>
+      <select id="device"><option value="">First connected</option><option value="0">Controller 1</option><option value="1">Controller 2</option><option value="2">Controller 3</option><option value="3">Controller 4</option></select>
+
+      <div class="check"><input type="checkbox" id="sound"><label for="sound" style="margin:0;color:var(--text)">Click sounds (recorded PS5 set)</label></div>
+      <div id="soundBox" hidden>
+        <label for="vol">Volume <span id="volLabel">60</span>%</label>
+        <input type="range" id="vol" min="0" max="100" value="60">
+        <div class="row" style="margin-top:8px"><button type="button" class="ghost" id="testSound">Play test click</button></div>
+        <small class="note">In OBS, tick "Control audio via OBS" on the source so the clicks show in the audio mixer.</small>
+      </div>
+
+      <label for="scale">Size <span id="scaleLabel">100</span>%</label>
+      <input type="range" id="scale" min="30" max="200" value="100">
+
+      <label for="dead">Stick deadzone <span id="deadLabel">12</span>%</label>
+      <input type="range" id="dead" min="0" max="40" value="12">
+
+      <label for="variant">Xbox colour</label>
+      <select id="variant"><option value="">Black</option><option value="white">White</option></select>
+
+      <div class="row" style="margin-top:12px">
+        <div><label style="margin:0 0 4px">Highlight</label><input type="color" id="accent" value="#35e0a1"></div>
+        <div><label style="margin:0 0 4px">PS5 body</label><input type="color" id="body" value="#17181b"></div>
+        <div class="grow"><label style="margin:0 0 4px">&nbsp;</label><button type="button" class="ghost" id="resetBody">Default body</button></div>
+      </div>
+
+      <div class="check"><input type="checkbox" id="chroma"><label for="chroma" style="margin:0;color:var(--text)">Solid background (for chroma key)</label></div>
+      <div id="chromaBox" hidden><input type="color" id="bg" value="#00ff00"></div>
+
+      <div class="check"><input type="checkbox" id="demo"><label for="demo" style="margin:0;color:var(--text)">Animated demo in the preview (no controller needed)</label></div>
+      <div class="check"><input type="checkbox" id="hint" checked><label for="hint" style="margin:0;color:var(--text)">Show "press any button" hint</label></div>
+    </section>
+
+    <section>
+      <div class="card">
+        <div class="preview"><iframe id="preview" title="Controller preview"></iframe></div>
+        <small class="note" id="padStatus">Press a button on your controller to see it here. Browsers only expose a controller after a button press.</small>
+        <div class="url">
+          <label for="obsUrl">OBS Browser Source URL</label>
+          <div class="row"><input type="text" id="obsUrl" class="grow" readonly><button type="button" id="copy">Copy</button></div>
+        </div>
+        <ol>
+          <li>In OBS add a <b>Browser Source</b> and paste the URL.</li>
+          <li>Set <b>Width</b> and <b>Height</b> to <b id="dims">800 × 520</b>.</li>
+          <li>The controller must be connected to the <b>same PC</b> that runs OBS.</li>
+        </ol>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="/static/controller/core.js?v=6"></script>
+<script src="/static/controller/skins.js?v=6"></script>
+<script src="/static/controller/sound.js?v=6"></script>
+<script>
+(function () {
+  const C = window.ControllerCore;
+  const $ = (id) => document.getElementById(id);
+  const ids = ['controller', 'variant', 'device', 'sound', 'vol', 'scale', 'dead', 'accent', 'body', 'chroma', 'bg', 'hint', 'demo'];
+  let bodyChosen = false;
+
+  function settings() {
+    return {
+      controller: $('controller').value,
+      device: $('device').value === '' ? null : Number($('device').value),
+      sound: $('sound').checked,
+      volume: Number($('vol').value) / 100,
+      scale: Number($('scale').value) / 100,
+      deadzone: Number($('dead').value) / 100,
+      accent: $('accent').value,
+      body: bodyChosen ? $('body').value : '',
+      bg: $('chroma').checked ? $('bg').value : '',
+      hint: $('hint').checked,
+      variant: $('variant').value,
+    };
+  }
+
+  function refresh() {
+    const s = settings();
+    $('soundBox').hidden = !s.sound;
+    $('chromaBox').hidden = !$('chroma').checked;
+    $('volLabel').textContent = Math.round(s.volume * 100);
+    $('scaleLabel').textContent = Math.round(s.scale * 100);
+    $('deadLabel').textContent = Math.round(s.deadzone * 100);
+    const sizes = window.ControllerSkins.size, dims = (kind) => Math.round(sizes[kind][0] * s.scale) + ' × ' + Math.round(sizes[kind][1] * s.scale);
+    $('dims').textContent = s.controller === 'xbox' ? dims('xbox') : s.controller === 'dualsense' ? dims('dualsense')
+      : 'Xbox ' + dims('xbox') + ', PS5 ' + dims('dualsense');
+    const query = C.toQuery(s);
+    $('obsUrl').value = location.origin + '/controller' + query;
+    // the preview ignores the size setting so it always fits; everything else matches the OBS URL
+    $('preview').src = '/controller' + C.toQuery(Object.assign({}, s, { scale: 0.55, sound: false, demo: $('demo').checked }));
+  }
+
+  ids.forEach((id) => $(id).addEventListener('input', refresh));
+  $('body').addEventListener('input', () => { bodyChosen = true; refresh(); });
+  $('resetBody').addEventListener('click', () => { bodyChosen = false; refresh(); });
+  $('copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('obsUrl').value); $('copy').textContent = 'Copied'; }
+    catch (e) { $('obsUrl').select(); document.execCommand('copy'); $('copy').textContent = 'Copied'; }
+    setTimeout(() => { $('copy').textContent = 'Copy'; }, 1500);
+  });
+  const player = new window.ControllerSound.Player({ enabled: true, volume: 0.6 });
+  $('testSound').addEventListener('click', () => {
+    player.volume = Number($('vol').value) / 100; player.start();
+    setTimeout(() => { player.play('btn', true); setTimeout(() => player.play('btn', false), 90); }, 250);
+  });
+
+  function watchPads() {
+    const pads = (navigator.getGamepads ? Array.from(navigator.getGamepads()) : []).filter(Boolean);
+    $('padStatus').textContent = pads.length
+      ? 'Connected: ' + pads.map((p) => p.index + ': ' + p.id.replace(/\s*\(.*$/, '')).join('  |  ')
+      : 'Press a button on your controller to see it here. Browsers only expose a controller after a button press.';
+  }
+  setInterval(watchPads, 700);
+  refresh();
+})();
+</script>
+</body>
+</html>
