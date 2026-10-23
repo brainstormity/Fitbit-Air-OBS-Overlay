@@ -52,31 +52,6 @@ html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
 .stage.xbox .home circle:first-child { fill: url(#xbGuide); }
 .stage.xbox .home .home-ring { fill: none; }
 
-/* ---- DualSense (white shell, black plate) ---- */
-.stage.dualsense { --shell: #d9dde3; --shell-hi: #f4f6f9; --bumper: #e6e9ee; --dpad: #f4f6f9; }
-.dualsense .shell { stroke: none; }
-.dualsense .shell-line { fill: none; stroke: rgba(0, 0, 0, .28); stroke-width: 2; }
-.dualsense .plate { fill: #16171b; stroke: rgba(0, 0, 0, .5); stroke-width: 2; }
-.dualsense .lightbar { fill: none; stroke: #3b82f6; stroke-width: 4; stroke-linecap: round; opacity: .9; filter: drop-shadow(0 0 5px #3b82f6); }
-.dualsense .bumper { fill: url(#dsBump); stroke: rgba(0, 0, 0, .28); }
-.dualsense .trig-bg { fill: #e6e9ee; stroke: rgba(0, 0, 0, .22); }
-.dualsense .touch rect { stroke: rgba(255, 255, 255, .12); stroke-width: 1.5; }
-.dualsense .touch.on rect { fill: var(--accent); filter: drop-shadow(0 0 10px var(--accent)); }
-.dualsense .cap { fill: url(#dsCap); }
-.dualsense .stick-ring { fill: #f1f3f6; stroke: rgba(0, 0, 0, .25); }
-.dualsense .well { fill: rgba(0, 0, 0, .12); }
-.dualsense .plate ~ .stick-unit .well, .dualsense .stick-unit .well { fill: #0b0c0e; }
-.dualsense .dpad .well, .dualsense .face-cluster .well { display: none; }
-.dualsense .dir, .dualsense .dir-core { stroke: rgba(0, 0, 0, .3); stroke-width: 1.5; }
-.dualsense .face circle { fill: #f6f7fa; stroke: rgba(0, 0, 0, .22); stroke-width: 1.5; }
-.dualsense .face.on circle { fill: var(--c); }
-.dualsense .small.pill rect { fill: #23252a; stroke: rgba(255, 255, 255, .25); }
-.dualsense .small.pill.on rect { fill: var(--accent); }
-.dualsense .home circle { fill: #0f1013; stroke: rgba(255, 255, 255, .22); }
-.dualsense .ps-mark { fill: none; stroke: #f4f6f9; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.dualsense .home.on .ps-mark { stroke: #101114; }
-.dualsense .mute rect { fill: #272a30; stroke: rgba(255, 255, 255, .12); }
-
 /* ---- pressed state: kept last and prefixed with .stage so it beats every skin's resting fill
    (e.g. ".stage.xbox .bumper" used to win, so LB/RB only glowed at the edge instead of filling) ---- */
 .stage { --glow: drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 14px var(--accent)) drop-shadow(0 0 26px var(--accent)); }

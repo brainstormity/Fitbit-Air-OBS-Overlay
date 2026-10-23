@@ -12,7 +12,7 @@
 
   let shownType = null, els = null, previous = null, lastId = null;
 
-  function applyBody(type) {
+  function applyBody() {
     const body = options.body;
     const set = (name, value) => stage.style.setProperty(name, value);
     if (!body) {
@@ -20,21 +20,21 @@
       return;
     }
     set('--shell', body); set('--shell-hi', body);
-    if (type === 'xbox') { set('--cap', '#0b0b0d'); set('--cap-hi', '#2b2d31'); }
+    set('--cap', '#0b0b0d'); set('--cap-hi', '#2b2d31');
   }
 
-  function render(type) {
-    if (shownType === type) return;
-    shownType = type;
-    const [width, height] = Skins.size[type];
-    stage.className = 'stage ' + type + (type === 'xbox' && options.variant === 'white' ? ' white' : '');
+  function render() {
+    if (shownType === 'xbox') return;
+    shownType = 'xbox';
+    const [width, height] = Skins.size.xbox;
+    stage.className = 'stage xbox' + (options.variant === 'white' ? ' white' : '');
     stage.style.setProperty('--w', Math.round(width * options.scale) + 'px');
     stage.style.setProperty('--h', Math.round(height * options.scale) + 'px');
     stage.style.setProperty('--cw', width + 'px');
     stage.style.setProperty('--ch', height + 'px');
     stage.style.setProperty('--scale', options.scale);
-    stage.innerHTML = '<div class="canvas">' + Skins[type]() + '</div>';
-    applyBody(type);
+    stage.innerHTML = '<div class="canvas">' + Skins.xbox() + '</div>';
+    applyBody();
     els = {
       buttons: Array.from(stage.querySelectorAll('[data-btn]')),
       sticks: { L: stage.querySelector('[data-stick="L"]'), R: stage.querySelector('[data-stick="R"]') },
@@ -75,11 +75,11 @@
 
   function frame() {
     const getter = navigator.getGamepads ? navigator.getGamepads.bind(navigator) : () => [];
-    const pad = options.demo ? Core.demoPad(performance.now(), options.controller === 'auto' ? (shownType || 'xbox') : options.controller)
+    const pad = options.demo ? Core.demoPad(performance.now())
                              : Core.pickPad(getter(), options.device);
     if (pad) {
       if (pad.id !== lastId) { lastId = pad.id; previous = null; }
-      render(options.controller === 'auto' ? Core.detectType(pad.id) : options.controller);
+      render();
       const now = sample(pad);
       if (options.sound) Core.diff(previous, now, options.deadzone).forEach((e) => {
         if (e.type === 'button') player.play(e.category, e.pressed);
@@ -90,7 +90,7 @@
       hint.hidden = true;
     } else {
       previous = null; lastId = null;
-      render(options.controller === 'auto' ? (shownType || 'xbox') : options.controller);
+      render();
       if (els) {
         els.buttons.forEach((el) => el.classList.remove('on'));
         Object.values(els.sticks).forEach((cap) => { if (cap) { cap.removeAttribute('transform'); cap.style.transform = ''; cap.classList.remove('active'); } });

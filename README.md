@@ -109,18 +109,18 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-## Controller Overlay (Xbox and PS5)
+## Controller Overlay (Xbox)
 
-Show your controller on stream, with click sounds. It runs in the same app: no extra install, and nothing leaves your PC.
+Show your Xbox controller on stream, with click sounds. It runs in the same app: no extra install, and nothing leaves your PC.
 
 1. Start the server (`python3 server.py`) and open **http://127.0.0.1:8000/controller-setup** (also linked from the dashboard header).
-2. Pick the controller look, size, colours and sounds. The page builds the OBS URL for you.
-3. In OBS add a **Browser Source**, paste the URL, and set the width and height shown on the page.
+2. Pick the controller colour, size, and sounds. The page builds the OBS URL for you.
+3. In OBS add a **Browser Source**, paste the URL, and set the width and height shown on the page (800 × 560 default).
 
 | What | URL |
 |---|---|
-| Overlay (auto-detects Xbox or DualSense) | `http://127.0.0.1:8000/controller` |
-| Force a look | `/controller?controller=xbox` or `?controller=dualsense` |
+| Overlay | `http://127.0.0.1:8000/controller` |
+| White Xbox variant | `/controller?variant=white` |
 | Click sounds | `/controller?sound=1&vol=60` (tick **Control audio via OBS** on the source) |
 | Pick one of several pads | `/controller?device=1` |
 | Size, colours, chroma key | `?scale=150`, `?body=ffffff`, `?accent=ff66aa`, `?bg=00ff00` |
@@ -130,6 +130,6 @@ Show your controller on stream, with click sounds. It runs in the same app: no e
 
 Notes:
 - The controller must be connected to the **same PC that runs OBS**. Browsers only expose a controller after its first button press, and only on `localhost`/`127.0.0.1` (not on a LAN address).
-- Works with any controller that reports the standard layout. Xbox Series and DualSense get their own original artwork; other pads use the Xbox layout. Use `?variant=white` for the white Xbox.
+- Works with any controller that reports the standard gamepad layout. Use `?variant=white` for the white Xbox.
 - **Use your own sounds:** replace the mp3 files in `static/sounds/dualsense/` (same file names). Missing files are simply silent.
 - Tests for the controller logic: `node --test tests/` (Node 18+, optional).

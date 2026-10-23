@@ -9,9 +9,7 @@ const pad = (pressed = [], axes = [0, 0, 0, 0], extra = {}) => ({
 
 test('detects the controller type from its name', () => {
   assert.equal(C.detectType('Xbox Wireless Controller (STANDARD GAMEPAD Vendor: 045e Product: 0b13)'), 'xbox');
-  assert.equal(C.detectType('DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)'), 'dualsense');
-  assert.equal(C.detectType('Wireless Controller (Vendor: 054c Product: 0ce6)'), 'dualsense');
-  assert.equal(C.detectType('PS4 Controller'), 'dualsense');
+  assert.equal(C.detectType('DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)'), 'xbox');
   assert.equal(C.detectType('Some Unknown Pad'), 'xbox');
   assert.equal(C.detectType(undefined), 'xbox');
 });
@@ -67,15 +65,15 @@ test('stick moves produce one event on leaving and one on returning to centre', 
 
 test('options are validated and clamped', () => {
   const d = C.options('');
-  assert.equal(d.controller, 'auto'); assert.equal(d.sound, false); assert.equal(d.volume, 0.6); assert.equal(d.device, null);
+  assert.equal(d.controller, 'xbox'); assert.equal(d.sound, false); assert.equal(d.volume, 0.6); assert.equal(d.device, null);
   assert.equal(d.hint, false);
-  const o = C.options('?controller=dualsense&device=1&sound=1&vol=500&dead=-4&scale=9999&body=%23ffffff&accent=zzz&bg=00ff00&hint=0');
-  assert.equal(o.controller, 'dualsense'); assert.equal(o.device, 1); assert.equal(o.sound, true);
+  const o = C.options('?device=1&sound=1&vol=500&dead=-4&scale=9999&body=%23ffffff&accent=zzz&bg=00ff00&hint=0');
+  assert.equal(o.controller, 'xbox'); assert.equal(o.device, 1); assert.equal(o.sound, true);
   assert.equal(o.volume, 1); assert.equal(o.deadzone, 0); assert.equal(o.scale, 3);
   assert.equal(o.body, '#ffffff'); assert.equal(o.accent, '#35e0a1'); assert.equal(o.bg, '#00ff00');
   assert.equal(o.hint, false);
   assert.equal(C.options('?hint=1').hint, true);
-  assert.equal(C.options('?controller=evil"><script>').controller, 'auto');
+  assert.equal(C.options('?controller=evil"><script>').controller, 'xbox');
   assert.equal(C.options('?device=-1').device, null);
   assert.equal(C.options('?body=red;background:url(x)').body, '');
 });
@@ -83,8 +81,8 @@ test('options are validated and clamped', () => {
 test('toQuery round-trips and leaves defaults out', () => {
   assert.equal(C.toQuery(C.options('')), '');
   assert.equal(C.toQuery({ ...C.options(''), hint: true }), '?hint=1');
-  const q = C.toQuery({ ...C.options(''), controller: 'xbox', sound: true, volume: 0.4, body: '#101010', scale: 1.5 });
-  assert.equal(q, '?controller=xbox&sound=1&vol=40&scale=150&body=101010');
+  const q = C.toQuery({ ...C.options(''), sound: true, volume: 0.4, body: '#101010', scale: 1.5 });
+  assert.equal(q, '?sound=1&vol=40&scale=150&body=101010');
   const back = C.options(q);
   assert.equal(back.controller, 'xbox'); assert.equal(back.volume, 0.4); assert.equal(back.scale, 1.5); assert.equal(back.body, '#101010');
 });
@@ -101,7 +99,7 @@ test('pickPad chooses the requested device or the first connected one', () => {
 test('demo pad presses every control, moves sticks and ramps triggers', () => {
   const seen = new Set(); let stickMoved = false, triggerPartial = false;
   for (let ms = 0; ms < 450 * 18 * 3; ms += 50) {
-    const pad = C.demoPad(ms, 'dualsense');
+    const pad = C.demoPad(ms);
     pad.buttons.forEach((b, i) => { if (b.pressed) seen.add(i); if ((i === 6 || i === 7) && b.pressed && b.value < 1) triggerPartial = true; });
     if (C.stick(pad.axes[0], pad.axes[1], 0.1).magnitude > 0.5) stickMoved = true;
     assert.ok(pad.axes.every((v) => Math.abs(v) <= 1.0001));
@@ -109,15 +107,15 @@ test('demo pad presses every control, moves sticks and ramps triggers', () => {
   }
   assert.deepEqual([...seen].sort((a, b) => a - b), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
   assert.ok(stickMoved && triggerPartial);
-  assert.match(C.demoPad(0, 'xbox').id, /Xbox/);
-  assert.equal(C.detectType(C.demoPad(0, 'dualsense').id), 'dualsense');
+  assert.match(C.demoPad(0).id, /Xbox/);
+  assert.equal(C.detectType(C.demoPad(0).id), 'xbox');
   assert.equal(C.options('?demo=1').demo, true);
   assert.equal(C.options('').demo, false);
 });
 
 test('skins expose every control the overlay updates', () => {
   const Skins = require('../static/controller/skins.js');
-  for (const type of ['xbox', 'dualsense']) {
+  for (const type of ['xbox']) {
     const html = Skins[type]();
     for (let i = 0; i <= 15; i++) assert.ok(html.includes('data-btn="' + i + '"'), type + ' is missing button ' + i);
     assert.ok(html.includes('data-stick="L"') && html.includes('data-stick="R"'), type + ' sticks');

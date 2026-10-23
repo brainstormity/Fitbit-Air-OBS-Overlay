@@ -20,10 +20,8 @@
   const TRIGGER_THRESHOLD = 0.35;
   const STICK_MOVE_THRESHOLD = 0.35;
 
-  /** Pick a look from the controller's reported name. Unknown pads use the Xbox layout, which is what "standard" maps to. */
-  function detectType(id) {
-    const text = String(id || '').toLowerCase();
-    if (/dualsense|dualshock|054c|playstation|ps5|ps4|wireless controller.*054c/.test(text)) return 'dualsense';
+  /** The overlay uses the standard Xbox layout for all controllers. */
+  function detectType() {
     return 'xbox';
   }
 
@@ -81,10 +79,9 @@
   /** Read the overlay settings from a URL query string. Every value is validated; nothing is trusted. */
   function options(search) {
     const params = new URLSearchParams(search || '');
-    const type = params.get('controller');
     const device = params.get('device');
     return {
-      controller: type === 'xbox' || type === 'dualsense' ? type : 'auto',
+      controller: 'xbox',
       device: device !== null && /^\d+$/.test(device) ? Number(device) : null,
       sound: params.get('sound') === '1',
       volume: clamp(params.has('vol') ? params.get('vol') : 60, 0, 100) / 100,
@@ -104,7 +101,6 @@
     const defaults = options('');
     const parts = [];
     const add = (key, value) => parts.push(key + '=' + encodeURIComponent(value));
-    if (settings.controller && settings.controller !== 'auto') add('controller', settings.controller);
     if (settings.device !== null && settings.device !== undefined && settings.device !== '') add('device', settings.device);
     if (settings.sound) add('sound', 1);
     if (settings.sound && Math.round(settings.volume * 100) !== Math.round(defaults.volume * 100)) add('vol', Math.round(settings.volume * 100));
@@ -130,7 +126,7 @@
    * A scripted fake controller for previews and screenshots: no hardware needed. Every ~450 ms it presses the next
    * control, while the sticks circle and the triggers ramp, so every part of the skin and every sound gets shown.
    */
-  function demoPad(ms, type) {
+  function demoPad(ms) {
     const order = [0, 1, 2, 3, 4, 5, 12, 15, 13, 14, 8, 9, 10, 11, 16, 17, 6, 7];
     const step = Math.floor(ms / 450);
     const active = order[step % order.length];
@@ -141,8 +137,7 @@
       buttons[active] = { pressed: true, value: 1 };
       if (active === 6 || active === 7) buttons[active].value = 0.35 + 0.65 * (((ms % 450) / 450) / 0.7);
     }
-    const id = type === 'dualsense' ? 'DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)'
-                                    : 'Xbox Wireless Controller (STANDARD GAMEPAD Vendor: 045e Product: 0b13)';
+    const id = 'Xbox Wireless Controller (STANDARD GAMEPAD Vendor: 045e Product: 0b13)';
     const amount = Math.max(0, Math.sin(t * 0.7));                      // sticks swell and fade so the centre is visited too
     return { id, index: 0, connected: true, buttons,
       axes: [Math.cos(t * 1.6) * amount, Math.sin(t * 1.6) * amount, Math.cos(t * 1.1 + 2) * amount * 0.9, Math.sin(t * 1.1 + 2) * amount * 0.9] };

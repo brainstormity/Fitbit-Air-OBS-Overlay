@@ -256,7 +256,7 @@ async def get_overlay():
 @app.get("/controller")
 @app.get("/controller.html")
 async def get_controller_overlay():
-    """Serve the transparent controller overlay (Xbox / PS5) for an OBS Browser Source."""
+    """Serve the transparent Xbox controller overlay for an OBS Browser Source."""
     if not CONTROLLER_HTML.exists():
         return HTMLResponse("<h1>controller.html not found</h1>", status_code=404)
     return HTMLResponse(content=CONTROLLER_HTML.read_text(encoding="utf-8"))

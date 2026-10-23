@@ -1,5 +1,5 @@
 /*
- * Controller skins: original SVG drawings of an Xbox Series wireless controller and a PS5 DualSense.
+ * Controller skin: original SVG drawing of an Xbox Series wireless controller.
  * Every interactive part carries a data attribute the page updates each frame:
  *   data-btn="N"        standard-mapping button N (adds class "on" while pressed)
  *   data-stick="L|R"    the moving cap of a stick (translated by the axes)
@@ -86,49 +86,10 @@
 </svg>`;
   }
 
-  /* --------------------------------------------------------------------- DualSense (original artwork) */
-  function dualsense() {
-    return `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" class="skin dualsense" role="img" aria-label="DualSense controller">
-  <defs>
-    <linearGradient id="dsShell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--shell-hi)"/><stop offset="1" stop-color="var(--shell)"/></linearGradient>
-    <linearGradient id="dsBump" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d3d7de"/></linearGradient>
-    <linearGradient id="dsPad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34373e"/><stop offset="1" stop-color="#1c1e22"/></linearGradient>
-    <radialGradient id="dsCap" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#40434b"/><stop offset="1" stop-color="#121316"/></radialGradient>
-    <clipPath id="dsClip"><path id="dsBody" d="M 206 150 C 290 122 510 122 594 150 C 654 176 692 270 710 386 C 722 458 702 512 652 518 C 610 522 582 490 564 452 C 552 426 534 408 506 408 L 294 408 C 266 408 248 426 236 452 C 218 490 190 522 148 518 C 98 512 78 458 90 386 C 108 270 146 176 206 150 Z"/></clipPath>
-  </defs>
-  ${trigger('L', 222, 100, 84, 70, -8)}
-  ${trigger('R', 494, 100, 84, 70, 8)}
-  <use href="#dsBody" class="shell" fill="url(#dsShell)"/>
-  <g clip-path="url(#dsClip)">
-    <path class="plate" d="M 282 134 C 350 124 450 124 518 134 C 530 210 536 330 524 396 C 520 420 506 440 480 440 L 320 440 C 294 440 280 420 276 396 C 264 330 270 210 282 134 Z"/>
-    <path d="M 100 160 C 300 122 500 122 700 160 L 700 200 C 500 160 300 160 100 200 Z" fill="rgba(255,255,255,.35)"/>
-  </g>
-  <use href="#dsBody" class="shell-line"/>
-  <path class="lightbar" d="M 288 146 C 276 220 276 330 284 392 M 512 146 C 524 220 524 330 516 392"/>
-  <path data-btn="4" class="bumper" d="M 184 190 C 198 154 236 130 286 124 C 306 122 320 124 328 132 L 322 148 C 304 146 282 150 262 162 C 238 174 216 194 204 214 Z"/>
-  <path data-btn="5" class="bumper" d="M 616 190 C 602 154 564 130 514 124 C 494 122 480 124 472 132 L 478 148 C 496 146 518 150 538 162 C 562 174 584 194 596 214 Z"/>
-  <g data-btn="17" class="touch"><rect x="312" y="150" width="176" height="92" rx="12" fill="url(#dsPad)"/></g>
-  <g data-btn="8" class="small pill"><rect x="296" y="168" width="9" height="30" rx="4.5"/></g>
-  <g data-btn="9" class="small pill"><rect x="495" y="168" width="9" height="30" rx="4.5"/></g>
-  <g data-btn="16" class="home"><circle cx="400" cy="286" r="16"/><path class="ps-mark" d="M 395 277 L 395 295 M 395 277 C 404 278 408 282 404 286 C 402 288 398 289 395 289 M 389 293 C 394 295 400 296 409 291"/></g>
-  <g class="mute"><rect x="387" y="316" width="26" height="9" rx="4.5"/></g>
-  ${stickAt('L', 340, 362, 28)}
-  ${stickAt('R', 460, 362, 28)}
-  ${dpad(196, 232, 31)}
-  <g class="face-cluster">
-    <g data-btn="3" class="face sym" style="--c:#3fbf8a"><circle cx="604" cy="196" r="22"/><path class="symbol" d="M 604 185 L 614 203 L 594 203 Z"/></g>
-    <g data-btn="2" class="face sym" style="--c:#e57fb3"><circle cx="568" cy="232" r="22"/><rect class="symbol" x="559" y="223" width="18" height="18" rx="1.5"/></g>
-    <g data-btn="1" class="face sym" style="--c:#ee5a5a"><circle cx="640" cy="232" r="22"/><circle class="symbol" cx="640" cy="232" r="9.5"/></g>
-    <g data-btn="0" class="face sym" style="--c:#5b8def"><circle cx="604" cy="268" r="22"/><path class="symbol" d="M 595 259 L 613 277 M 613 259 L 595 277"/></g>
-  </g>
-</svg>`;
-  }
+  // natural size of the skin in pixels, how far a stick cap moves, and how the skin shows analog triggers
+  const size = { xbox: [800, 560] };
+  const travel = { xbox: 22 };
+  const triggerMode = { xbox: 'fill' };
 
-  // natural size of each skin in pixels, how far a stick cap moves, and how the skin shows analog triggers
-  const size = { xbox: [800, 560], dualsense: [800, 560] };
-  const travel = { xbox: 22, dualsense: STICK_TRAVEL };
-  const triggerMode = { xbox: 'fill', dualsense: 'fill' };
-
-  return { xbox, dualsense, STICK_TRAVEL, size, travel, triggerMode };
+  return { xbox, STICK_TRAVEL, size, travel, triggerMode };
 });

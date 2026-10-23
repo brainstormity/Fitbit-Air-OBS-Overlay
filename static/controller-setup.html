@@ -32,21 +32,14 @@
 <body>
 <main>
   <h1>Controller Overlay</h1>
-  <p class="lead">Show your Xbox or PS5 controller on stream, with click sounds. Pick your options, then copy the URL into an OBS Browser Source. <a href="/">Back to the heart-rate dashboard</a></p>
+  <p class="lead">Show your Xbox controller on stream, with click sounds. Pick your options, then copy the URL into an OBS Browser Source. <a href="/">Back to the heart-rate dashboard</a></p>
 
   <div class="grid">
     <section class="card">
-      <label for="controller">Controller look</label>
-      <select id="controller">
-        <option value="auto">Automatic (match the connected controller)</option>
-        <option value="xbox">Xbox Series</option>
-        <option value="dualsense">PS5 DualSense</option>
-      </select>
-
       <label for="device">Which controller (if several are connected)</label>
       <select id="device"><option value="">First connected</option><option value="0">Controller 1</option><option value="1">Controller 2</option><option value="2">Controller 3</option><option value="3">Controller 4</option></select>
 
-      <div class="check"><input type="checkbox" id="sound"><label for="sound" style="margin:0;color:var(--text)">Click sounds (recorded PS5 set)</label></div>
+      <div class="check"><input type="checkbox" id="sound"><label for="sound" style="margin:0;color:var(--text)">Click sounds</label></div>
       <div id="soundBox" hidden>
         <label for="vol">Volume <span id="volLabel">60</span>%</label>
         <input type="range" id="vol" min="0" max="100" value="60">
@@ -65,7 +58,7 @@
 
       <div class="row" style="margin-top:12px">
         <div><label style="margin:0 0 4px">Highlight</label><input type="color" id="accent" value="#35e0a1"></div>
-        <div><label style="margin:0 0 4px">PS5 body</label><input type="color" id="body" value="#17181b"></div>
+        <div><label style="margin:0 0 4px">Body colour</label><input type="color" id="body" value="#1a1b1e"></div>
         <div class="grow"><label style="margin:0 0 4px">&nbsp;</label><button type="button" class="ghost" id="resetBody">Default body</button></div>
       </div>
 
@@ -86,7 +79,7 @@
         </div>
         <ol>
           <li>In OBS add a <b>Browser Source</b> and paste the URL.</li>
-          <li>Set <b>Width</b> and <b>Height</b> to <b id="dims">800 × 520</b>.</li>
+          <li>Set <b>Width</b> and <b>Height</b> to <b id="dims">800 × 560</b>.</li>
           <li>The controller must be connected to the <b>same PC</b> that runs OBS.</li>
         </ol>
       </div>
@@ -94,19 +87,19 @@
   </div>
 </main>
 
-<script src="/static/controller/core.js?v=9"></script>
-<script src="/static/controller/skins.js?v=9"></script>
-<script src="/static/controller/sound.js?v=9"></script>
+<script src="/static/controller/core.js?v=10"></script>
+<script src="/static/controller/skins.js?v=10"></script>
+<script src="/static/controller/sound.js?v=10"></script>
 <script>
 (function () {
   const C = window.ControllerCore;
   const $ = (id) => document.getElementById(id);
-  const ids = ['controller', 'variant', 'device', 'sound', 'vol', 'scale', 'dead', 'accent', 'body', 'chroma', 'bg', 'hint', 'demo'];
+  const ids = ['variant', 'device', 'sound', 'vol', 'scale', 'dead', 'accent', 'body', 'chroma', 'bg', 'hint', 'demo'];
   let bodyChosen = false;
 
   function settings() {
     return {
-      controller: $('controller').value,
+      controller: 'xbox',
       device: $('device').value === '' ? null : Number($('device').value),
       sound: $('sound').checked,
       volume: Number($('vol').value) / 100,
@@ -128,8 +121,7 @@
     $('scaleLabel').textContent = Math.round(s.scale * 100);
     $('deadLabel').textContent = Math.round(s.deadzone * 100);
     const sizes = window.ControllerSkins.size, dims = (kind) => Math.round(sizes[kind][0] * s.scale) + ' × ' + Math.round(sizes[kind][1] * s.scale);
-    $('dims').textContent = s.controller === 'xbox' ? dims('xbox') : s.controller === 'dualsense' ? dims('dualsense')
-      : 'Xbox ' + dims('xbox') + ', PS5 ' + dims('dualsense');
+    $('dims').textContent = dims('xbox');
     const query = C.toQuery(s);
     $('obsUrl').value = location.origin + '/controller' + query;
     // the preview ignores the size setting so it always fits; everything else matches the OBS URL
