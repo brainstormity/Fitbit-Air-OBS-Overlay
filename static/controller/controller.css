@@ -77,5 +77,26 @@ html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
 .dualsense .home.on .ps-mark { stroke: #101114; }
 .dualsense .mute rect { fill: #272a30; stroke: rgba(255, 255, 255, .12); }
 
+/* ---- pressed state: kept last and prefixed with .stage so it beats every skin's resting fill
+   (e.g. ".stage.xbox .bumper" used to win, so LB/RB only glowed at the edge instead of filling) ---- */
+.stage { --glow: drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 14px var(--accent)) drop-shadow(0 0 26px var(--accent)); }
+.stage .skin [data-btn] { transform-box: fill-box; transform-origin: 50% 50%; transition: transform .06s ease-out; }
+.stage .skin .bumper.on,
+.stage .skin .dir.on,
+.stage .skin .touch.on rect,
+.stage .skin .small.on circle,
+.stage .skin .small.on rect:first-child,
+.stage .skin .home.on circle:first-child {
+  fill: var(--accent); stroke: #ffffff; stroke-width: 3; filter: var(--glow);
+}
+.stage .skin .bumper.on { transform: translateY(3px) scale(.97); }
+.stage .skin .face.on { transform: scale(.92); }
+.stage .skin .face.on circle { fill: var(--c); stroke: #ffffff; stroke-width: 3.5; filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 14px var(--c)) drop-shadow(0 0 26px var(--c)); }
+.stage .skin .small.on, .stage .skin .home.on, .stage .skin .dir.on { transform: scale(.94); }
+.stage .skin .cap.on { fill: var(--accent); stroke: #ffffff; stroke-width: 4; filter: var(--glow); }
+/* analog triggers: the fill grows with pressure; once past the press threshold the whole trigger lights up */
+.stage .skin .trig-fill { transform-origin: 50% 0%; transition: none; }
+.stage .skin .trig-fill.on { opacity: 1; stroke: #ffffff; stroke-width: 3; filter: var(--glow); }
+
 #hint { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 8px 16px; border-radius: 999px; background: rgba(15, 16, 20, .78); color: #e9ebef; font: 600 14px "Segoe UI", system-ui, sans-serif; text-align: center; max-width: 92vw; }
 #hint[hidden] { display: none; }
