@@ -22,6 +22,8 @@ from ble_manager import BleManager, ScanCancelled
 STATIC_DIR = BASE_DIR / "static"
 OVERLAY_HTML = STATIC_DIR / "overlay.html"
 DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
+CONTROLLER_HTML = STATIC_DIR / "controller.html"
+CONTROLLER_SETUP_HTML = STATIC_DIR / "controller-setup.html"
 
 
 def get_local_ip() -> str:
@@ -249,6 +251,23 @@ async def get_overlay():
     with open(OVERLAY_HTML, "r", encoding="utf-8") as f:
         html = f.read()
     return HTMLResponse(content=html)
+
+
+@app.get("/controller")
+@app.get("/controller.html")
+async def get_controller_overlay():
+    """Serve the transparent controller overlay (Xbox / PS5) for an OBS Browser Source."""
+    if not CONTROLLER_HTML.exists():
+        return HTMLResponse("<h1>controller.html not found</h1>", status_code=404)
+    return HTMLResponse(content=CONTROLLER_HTML.read_text(encoding="utf-8"))
+
+
+@app.get("/controller-setup")
+async def get_controller_setup():
+    """Serve the page that builds the controller overlay URL."""
+    if not CONTROLLER_SETUP_HTML.exists():
+        return HTMLResponse("<h1>controller-setup.html not found</h1>", status_code=404)
+    return HTMLResponse(content=CONTROLLER_SETUP_HTML.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
