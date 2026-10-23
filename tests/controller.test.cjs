@@ -68,11 +68,13 @@ test('stick moves produce one event on leaving and one on returning to centre', 
 test('options are validated and clamped', () => {
   const d = C.options('');
   assert.equal(d.controller, 'auto'); assert.equal(d.sound, false); assert.equal(d.volume, 0.6); assert.equal(d.device, null);
+  assert.equal(d.hint, false);
   const o = C.options('?controller=dualsense&device=1&sound=1&vol=500&dead=-4&scale=9999&body=%23ffffff&accent=zzz&bg=00ff00&hint=0');
   assert.equal(o.controller, 'dualsense'); assert.equal(o.device, 1); assert.equal(o.sound, true);
   assert.equal(o.volume, 1); assert.equal(o.deadzone, 0); assert.equal(o.scale, 3);
   assert.equal(o.body, '#ffffff'); assert.equal(o.accent, '#35e0a1'); assert.equal(o.bg, '#00ff00');
   assert.equal(o.hint, false);
+  assert.equal(C.options('?hint=1').hint, true);
   assert.equal(C.options('?controller=evil"><script>').controller, 'auto');
   assert.equal(C.options('?device=-1').device, null);
   assert.equal(C.options('?body=red;background:url(x)').body, '');
@@ -80,6 +82,7 @@ test('options are validated and clamped', () => {
 
 test('toQuery round-trips and leaves defaults out', () => {
   assert.equal(C.toQuery(C.options('')), '');
+  assert.equal(C.toQuery({ ...C.options(''), hint: true }), '?hint=1');
   const q = C.toQuery({ ...C.options(''), controller: 'xbox', sound: true, volume: 0.4, body: '#101010', scale: 1.5 });
   assert.equal(q, '?controller=xbox&sound=1&vol=40&scale=150&body=101010');
   const back = C.options(q);

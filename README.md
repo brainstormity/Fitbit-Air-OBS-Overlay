@@ -125,6 +125,7 @@ Show your controller on stream, with click sounds. It runs in the same app: no e
 | Pick one of several pads | `/controller?device=1` |
 | Size, colours, chroma key | `?scale=150`, `?body=ffffff`, `?accent=ff66aa`, `?bg=00ff00` |
 | Stick deadzone | `?dead=12` |
+| Button press hint banner | `/controller?hint=1` |
 | Animated demo (no controller) | `/controller?demo=1` |
 
 Notes:

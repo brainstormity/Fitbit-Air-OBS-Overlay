@@ -93,7 +93,7 @@
       body: color(params.get('body'), ''),
       accent: color(params.get('accent'), '#35e0a1'),
       bg: color(params.get('bg'), ''),
-      hint: params.get('hint') !== '0',
+      hint: params.get('hint') === '1' || params.get('hint') === 'true',
       demo: params.get('demo') === '1',
       variant: params.get('variant') === 'white' ? 'white' : '',
     };
@@ -113,7 +113,7 @@
     if (settings.body) add('body', settings.body.replace('#', ''));
     if (settings.accent && settings.accent !== defaults.accent) add('accent', settings.accent.replace('#', ''));
     if (settings.bg) add('bg', settings.bg.replace('#', ''));
-    if (settings.hint === false) add('hint', 0);
+    if (settings.hint) add('hint', 1);
     if (settings.demo) add('demo', 1);
     if (settings.variant === 'white') add('variant', 'white');
     return parts.length ? '?' + parts.join('&') : '';
