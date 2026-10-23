@@ -54,6 +54,8 @@
       const cap = els.sticks[side];
       if (cap) {
         const reach = Skins.travel[shownType], dx = (value.x * reach).toFixed(2), dy = (value.y * reach).toFixed(2);
+        cap.classList.toggle('active', value.magnitude > 0);          // lit while the stick is pushed, brighter the further it goes
+        cap.style.setProperty('--tilt', value.magnitude.toFixed(3));
         if (cap instanceof SVGElement) cap.setAttribute('transform', 'translate(' + dx + ' ' + dy + ')');
         else cap.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
       }
@@ -91,7 +93,7 @@
       render(options.controller === 'auto' ? (shownType || 'xbox') : options.controller);
       if (els) {
         els.buttons.forEach((el) => el.classList.remove('on'));
-        Object.values(els.sticks).forEach((cap) => { if (cap) { cap.removeAttribute('transform'); cap.style.transform = ''; } });
+        Object.values(els.sticks).forEach((cap) => { if (cap) { cap.removeAttribute('transform'); cap.style.transform = ''; cap.classList.remove('active'); } });
         Object.values(els.triggers).forEach((t) => { if (t) { t.style.transform = ''; t.style.opacity = ''; } });
       }
       hint.hidden = !options.hint;

@@ -22,7 +22,11 @@ html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
 .skin .trig-bg { fill: var(--bumper, #232529); stroke: rgba(255, 255, 255, .1); stroke-width: 1.5; }
 .skin .trig-fill { fill: var(--accent); opacity: .92; transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(0); }
 .skin .cap { fill: url(#xbCap); stroke: rgba(255, 255, 255, .14); stroke-width: 2; }
-.skin .cap.on { stroke: var(--accent); stroke-width: 4; }
+.skin .cap.on { fill: var(--accent); stroke: var(--accent); stroke-width: 4; filter: drop-shadow(0 0 10px var(--accent)); }
+/* a pushed stick lights up like a pressed button; the glow grows with how far it is pushed (--tilt 0..1) */
+.skin [data-stick].active .cap { stroke: var(--accent); stroke-width: 4; filter: drop-shadow(0 0 calc(4px + 10px * var(--tilt, 1)) var(--accent)); }
+.skin [data-stick].active .cap-dish { stroke: var(--accent); stroke-opacity: .85; }
+.skin [data-stick].active .cap-dot { fill: var(--accent); }
 .skin .cap-dish { fill: none; stroke: rgba(255, 255, 255, .1); stroke-width: 2; }
 .skin .cap-dot { fill: rgba(255, 255, 255, .12); }
 .skin .stick-ring { fill: #0f1012; stroke: rgba(255, 255, 255, .08); stroke-width: 2; }
